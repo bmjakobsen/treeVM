@@ -270,5 +270,6 @@ the same as corelib, but isnt constant at startup, so it can be swapped before t
 the library needs to be static during the runtime
 
 #### Dynamic Library
-The Dynamic Library is accessed through the DYNLIB function, which gets the function id and the node as arguments,
-the DYNLIB function can signal through the return type if the functions doesnt exist, returns 0 = exists, returns !0 = doesnt exist
+The Dynamic Library is accessed through the vmx_dynlib function, which gets the function id and the node as arguments,
+the vmx_dynlib function can return an error.
+The vmx_dynlib_test function returns !0 if a dynamic function doesn't exist
