@@ -95,7 +95,7 @@ Instructions are always 8 bytes long
 | slen   | 70     | I . NN NN . .    | Get string length
 |  |  |  |
 | push   | 71     | I T NN DDDD       | Insert node into N subtree
-| ins    | 72     | I T . T DDDD       | Insert a new node
+| ins    | 72     | I T .. DDDD       | Insert a new node
 | set    | 73     | I T NN DDDD       | Set a node
 | rem    | 74     | I . . . . . . .    | Remove the last node
 | clear  | 75     | I . NN . . . .    | Clear a nodes children
@@ -207,7 +207,7 @@ The following macros can be set for the VM
 | -DLOADER             | If defined use a loader
 | -DINTERPRETER        | If defined use a interpreter
 | -DFORCE_SWITCH       | Force the use of a switch, even if a jump table is available
-| -DVM_LHAREA=x        | Least heap area size, must be set to a number that is a power of 2, default = 256
+| -DEXPLICIT_LHCAT     | Say that LHCAT is defined though a global variable, instead of the default of 8
 
 
 ### Globals
@@ -228,6 +228,7 @@ The following globals and functions must be defined so that the VM can be used
 | vm_error_t vmx_dynlib(uint32_t fn_id, vm_node_t *node)    | Function, calling dynamic functions
 | int vmx_dynlib_test(uint32_t fn_id)                       | Function, testing if a dynamic function is available
 | vm_error_t vmx_provide_heap_size(uint32_t size)           | Function, gets called by the vm when the heap is resized
+| const unsigned int VMX_LHCAT								| Only required with -DEXPLICIT_LHCAT flag, sets the least heap size category
 
 
 

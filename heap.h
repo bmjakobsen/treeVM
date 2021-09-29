@@ -10,47 +10,12 @@
 #include <inttypes.h>
 
 
-
-
-#undef VM_LHAREA_C
-#ifdef VM_LHAREA
-	#if !(VM_LHAREA < 0) && !(VM_LHAREA >= 0)
-		#error VM_LHAREA must be a number
-	#endif
-	
-	#if (VM_LHAREA == 16)
-		#define VM_LHAREA_C (32 - 4)
-	#elif (VM_LHAREA == 32)
-		#define VM_LHAREA_C (32 - 5)
-	#elif (VM_LHAREA == 64)
-		#define VM_LHAREA_C (32 - 6)
-	#elif (VM_LHAREA == 128)
-		#define VM_LHAREA_C (32 - 7)
-	#elif (VM_LHAREA == 256)
-		#define VM_LHAREA_C (32 - 8)
-	#elif (VM_LHAREA == 512)
-		#define VM_LHAREA_C (32 - 9)
-	#elif (VM_LHAREA == 1024)
-		#define VM_LHAREA_C (32 - 10)
-	#elif (VM_LHAREA == 2048)
-		#define VM_LHAREA_C (32 - 11)
-	#elif (VM_LHAREA == 4096)
-		#define VM_LHAREA_C (32 - 12)
-	#elif (VM_LHAREA == 8192)
-		#define VM_LHAREA_C (32 - 13)
-	#elif (VM_LHAREA == 16384)
-		#define VM_LHAREA_C (32 - 14)
-	#elif (VM_LHAREA == 32768)
-		#define VM_LHAREA_C (32 - 15)
-	#else
-		#define VM_LHAREA_C 32
-		#error VM_LHAREA must be bigger than 15, smaller than 32769 and a power of two
-	#endif
-#else
-	#define VM_LHAREA 256
-	#define VM_LHAREA_C (32 - 8)
+#undef VMX_LHCAT
+#ifndef EXPLICIT_LHCAT
+	#define VMX_LHCAT 8
 #endif
-
+#define VM_LHAREA (1<<VMX_LHCAT)
+#define VM_LHAREA_C (32 - VMX_LHCAT)
 
 
 
@@ -76,7 +41,7 @@ struct vm_heap {
 	struct vm_heap_area {
 		struct vm_heap_node *free;
 		uint32_t len;
-	} area[VM_LHAREA_C];
+	} area[32];
 };
 
 
@@ -118,7 +83,7 @@ static vm_error_t vm_heap_init() {
 
 
 	//Initialize Areas
-	for (int i = 0; i < VM_LHAREA_C; i++) {
+	for (int i = 0; i < 32; i++) {
 		vm_heap.area[i].free = NULL;
 		vm_heap.area[i].len = 0;
 	}

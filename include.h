@@ -286,7 +286,7 @@ extern int vmx_dynlib_test (uint32_t fn_id);						//Returns !0 if the dynamic fu
 
 extern vm_error_t vmx_provide_heap_size(uint32_t size);			//Gets called when the heap is resized to provide the new heap size for the loader
 
-
+extern const unsigned int VMX_LHCAT;
 
 
 //Globals exported
