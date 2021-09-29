@@ -16,27 +16,28 @@ typedef union vm_dpc_address {
 
 ### Loaders
 The program and data area are both organized as an up to (2³² - 1) elements big block of memory
-the VM expects that the memory block doesnt change during runtime,
-so literals and labels are addressed by an 32 bit number
+the VM expects that it doesnt change during runtime
 
 ### Interpreters
 The program and data area are both organized as an up to (2¹⁶ - 1) chunks, each with a size of up to (2¹⁶ - 1) elements
-the vm expects that the chunks dont change, but the array of chunks can, when reallocating the array the interpreter should lock the spinlock
-so literals and labels are addressed by 2 16-Bit numbers, one for the chunk and one for the elements
+the vm expects that the individual chunks dont change, when reallocating the array of chunks the interpreter should lock the areas,
+the vm uses the vmx_interpreter_lock and vmx_interpreter_lock unlock functions for synchronization.
+
+
 
 ### Data
 #### Alignment & Addressing
 Data types are aligned to 8-Bytes and addressed as 8-Byte elements
 
 #### Small Numbers
-4 Bytes big numbers are stored in the instruction itself, see int32, uint32 and float Data types
+32-Bit numbers are stored in the instruction itself, see int32, uint32 and float Data types
 
 #### Big Numbers
 Doubles are stored in the data area as a single 8-Byte element
 
 #### Strings
 Strings are stored in the data area starting at an 8-Byte element,
-the element contains the string header (`vm_string_t`),
+the first element contains the string header (`vm_string_t`),
 the size field of the string header is ignored, so it is recommended that both fields are set to the length
 
 
@@ -120,6 +121,7 @@ Instructions are always 8 bytes long
 | neg    | 93     | I N . . . . . .    | Negate (* -1)
 | floor  | 94     | I N . . . . . .    | Floor, round down to next full number
 | ceil   | 95     | I N . . . . . .    | Ceil, round up to next full number
+
 
 
 
