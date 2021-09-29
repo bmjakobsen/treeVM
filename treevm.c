@@ -237,7 +237,7 @@ vm_error_t vm_call_node(const vm_instruction_t * const ip, vm_node_t * const roo
 	}
 	root->type = VM_TYPE_CALL;
 
-	return(vm_call_node(ip, root));
+	return(vm_call_node2(ip, root));
 }
 
 
