@@ -577,6 +577,40 @@ OPCODE_START(VM_OPCODE_CALL) {
 					call_error = VM_ERROR_EXPECTED_CALLABLE_TYPE;
 					goto opcode_local_call_skip_l;
 			}
+		case(VM_TYPE_POP_NODE): 
+			switch ((enum vm_node_type) subtree->child[len - 1].type) {
+				case(VM_TYPE_BYTECODE_FUNCTION):
+					function = subtree->child[len - 1].value.function;
+					if ((call_error = vm_node_clear(&subtree->child[len - 1], 0))) {
+						VM_PANIC(call_error);
+					}
+					len--;
+					goto vm_opcode_local_call;
+				case(VM_TYPE_CORE_FUNCTION):
+					function = subtree->child[len - 1].value.function;
+					if ((call_error = vm_node_clear(&subtree->child[len - 1], 0))) {
+						VM_PANIC(call_error);
+					}
+					len--;
+					goto vm_opcode_local_call_core;
+				case(VM_TYPE_EXTENDED_FUNCTION):
+					function = subtree->child[len - 1].value.function;
+					if ((call_error = vm_node_clear(&subtree->child[len - 1], 0))) {
+						VM_PANIC(call_error);
+					}
+					len--;
+					goto vm_opcode_local_call_library;
+				case(VM_TYPE_DYNAMIC_FUNCTION):
+					function = subtree->child[len - 1].value.function;
+					if ((call_error = vm_node_clear(&subtree->child[len - 1], 0))) {
+						VM_PANIC(call_error);
+					}
+					len--;
+					goto vm_opcode_local_call_dynamic;
+				default:
+					call_error = VM_ERROR_EXPECTED_CALLABLE_TYPE;
+					goto opcode_local_call_skip_l;
+			}
 		//Bytecode function
 		case(VM_TYPE_BYTECODE_FUNCTION):
 			function = VM_INSTRUCTION_GET(OPERANT)(uint32_t);
@@ -738,6 +772,25 @@ OPCODE_START(VM_OPCODE_ADD) {
 			v = subtree->child[VM_INSTRUCTION_GET(OPERANT)(uint32_t)].value.number;
 			break;
 		}
+		//Indirect from last node
+		case(VM_TYPE_POP_NODE): {
+			if (0 >= len) {
+				VM_PANIC(VM_ERROR_OUT_OF_RANGE_NODE);
+			}
+			if (subtree->child[len - 1].type != VM_TYPE_NUMBER) {
+				VM_PANIC(VM_ERROR_EXPECTED_NUMBER);
+			}
+			
+			v = subtree->child[len - 1].value.number;
+
+			vm_error_t lerror = 0;
+			if ((lerror = vm_node_clear(&subtree->child[len - 1], 0))) {
+				VM_PANIC(lerror);
+			}
+			len--;
+
+			break;
+		}
 		//32-bit Literal
 		case(VM_TYPE_INT32): v = (double) VM_INSTRUCTION_GET(OPERANT)(int32_t); break;
 		case(VM_TYPE_UINT32): v = (double) VM_INSTRUCTION_GET(OPERANT)(uint32_t); break;
@@ -786,6 +839,25 @@ OPCODE_START(VM_OPCODE_SUB) {
 			}
 			
 			v = subtree->child[VM_INSTRUCTION_GET(OPERANT)(uint32_t)].value.number;
+			break;
+		}
+		//Indirect from last node
+		case(VM_TYPE_POP_NODE): {
+			if (0 >= len) {
+				VM_PANIC(VM_ERROR_OUT_OF_RANGE_NODE);
+			}
+			if (subtree->child[len - 1].type != VM_TYPE_NUMBER) {
+				VM_PANIC(VM_ERROR_EXPECTED_NUMBER);
+			}
+			
+			v = subtree->child[len - 1].value.number;
+
+			vm_error_t lerror = 0;
+			if ((lerror = vm_node_clear(&subtree->child[len - 1], 0))) {
+				VM_PANIC(lerror);
+			}
+			len--;
+
 			break;
 		}
 		//32-bit Literal
@@ -838,6 +910,25 @@ OPCODE_START(VM_OPCODE_MUL) {
 			v = subtree->child[VM_INSTRUCTION_GET(OPERANT)(uint32_t)].value.number;
 			break;
 		}
+		//Indirect from last node
+		case(VM_TYPE_POP_NODE): {
+			if (0 >= len) {
+				VM_PANIC(VM_ERROR_OUT_OF_RANGE_NODE);
+			}
+			if (subtree->child[len - 1].type != VM_TYPE_NUMBER) {
+				VM_PANIC(VM_ERROR_EXPECTED_NUMBER);
+			}
+			
+			v = subtree->child[len - 1].value.number;
+
+			vm_error_t lerror = 0;
+			if ((lerror = vm_node_clear(&subtree->child[len - 1], 0))) {
+				VM_PANIC(lerror);
+			}
+			len--;
+
+			break;
+		}
 		//32-bit Literal
 		case(VM_TYPE_INT32): v = (double) VM_INSTRUCTION_GET(OPERANT)(int32_t); break;
 		case(VM_TYPE_UINT32): v = (double) VM_INSTRUCTION_GET(OPERANT)(uint32_t); break;
@@ -886,6 +977,25 @@ OPCODE_START(VM_OPCODE_DIV) {
 			}
 			
 			v = subtree->child[VM_INSTRUCTION_GET(OPERANT)(uint32_t)].value.number;
+			break;
+		}
+		//Indirect from last node
+		case(VM_TYPE_POP_NODE): {
+			if (0 >= len) {
+				VM_PANIC(VM_ERROR_OUT_OF_RANGE_NODE);
+			}
+			if (subtree->child[len - 1].type != VM_TYPE_NUMBER) {
+				VM_PANIC(VM_ERROR_EXPECTED_NUMBER);
+			}
+			
+			v = subtree->child[len - 1].value.number;
+
+			vm_error_t lerror = 0;
+			if ((lerror = vm_node_clear(&subtree->child[len - 1], 0))) {
+				VM_PANIC(lerror);
+			}
+			len--;
+
 			break;
 		}
 		//32-bit Literal
@@ -939,6 +1049,25 @@ OPCODE_START(VM_OPCODE_MOD) {
 			}
 			
 			v = subtree->child[VM_INSTRUCTION_GET(OPERANT)(uint32_t)].value.number;
+			break;
+		}
+		//Indirect from last node
+		case(VM_TYPE_POP_NODE): {
+			if (0 >= len) {
+				VM_PANIC(VM_ERROR_OUT_OF_RANGE_NODE);
+			}
+			if (subtree->child[len - 1].type != VM_TYPE_NUMBER) {
+				VM_PANIC(VM_ERROR_EXPECTED_NUMBER);
+			}
+			
+			v = subtree->child[len - 1].value.number;
+
+			vm_error_t lerror = 0;
+			if ((lerror = vm_node_clear(&subtree->child[len - 1], 0))) {
+				VM_PANIC(lerror);
+			}
+			len--;
+
 			break;
 		}
 		//32-bit Literal
