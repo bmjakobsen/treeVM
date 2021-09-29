@@ -18,20 +18,15 @@
 #endif
 
 #define VM_GET_ARG(type, off) (*((type*) (((const uint8_t * restrict) &ip) + off)))
-#define VM_GET_ARG_BYTE(off)  VM_GET_ARG(uint8_t, off)
 
 
 
-#define VM_INSTRUCTION_NODE VM_GET_ARG_BYTE(1)
-#define VM_INSTRUCTION_NODE0 VM_INSTRUCTION_NODE
-#define VM_INSTRUCTION_NODE1 VM_INSTRUCTION_NODE
-#define VM_INSTRUCTION_FLAG VM_GET_ARG_BYTE(2)
-#define VM_INSTRUCTION_NODE2 VM_GET_ARG_BYTE(2)
-#define VM_INSTRUCTION_OPERATION VM_GET_ARG_BYTE(2)
-#define VM_INSTRUCTION_TYPE VM_GET_ARG_BYTE(1)
-#define VM_INSTRUCTION_UINT8 VM_GET_ARG_BYTE(3)
-#define VM_INSTRUCTION_UINT16 VM_GET_ARG(uint16_t, 2)
-#define VM_INSTRUCTION_OPERANT(type) (*((type*) (((const uint32_t * restrict) &ip) + 1)))
+#define VM_INSTRUCTION_TYPE  VM_GET_ARG(uint8_t, 1)
+#define VM_INSTRUCTION_UINT8  VM_GET_ARG(uint8_t, 1)
+#define VM_INSTRUCTION_INTID VM_GET_ARG(uint16_t, 2)
+#define VM_INSTRUCTION_NODE VM_GET_ARG(uint16_t, 2)
+#define VM_INSTRUCTION_NODE2 VM_GET_ARG(uint16_t, 4)
+#define VM_INSTRUCTION_OPERANT(type) VM_GET_ARG(type, 4)
 
 #define VM_INSTRUCTION_GET(x) VM_INSTRUCTION_##x
 
@@ -46,7 +41,7 @@ OPCODE_START(VM_OPCODE_EXIT) {
 }
 OPCODE_START(VM_OPCODE_VINT) {
 	//Call interrupt
-	if (vmx_interrupt(VM_INSTRUCTION_GET(UINT16))) {
+	if (vmx_interrupt(VM_INSTRUCTION_GET(INTID))) {
 		//Get jump address and jump
 		vm_instruction_t *tj = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(union vm_dpc_address));
 		if (tj == NULL) {
@@ -439,7 +434,7 @@ OPCODE_START(VM_OPCODE_JTAB) {
 	int64_t index = (int64_t) index2;
 	
 	//Skip if index is higher than uint16
-	if (index >= VM_INSTRUCTION_GET(UINT16)) {
+	if (index >= VM_INSTRUCTION_GET(UINT8)) {
 		goto recontinue_l;
 	}
 	

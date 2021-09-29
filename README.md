@@ -84,43 +84,43 @@ Instructions are always 8 bytes long
 ### Instructions
 | Name   | Opcode | Format             | Description
 | ------ | ------ | ------------------ | -----------
-| exit   | 64     | I 0 . . . . . .    | Exit the program and return error, error is limite between 0 and 127
+| exit   | 64     | I 0 . . . . . .    | Exit the program and return error, error is limited between 0 and 127
 | vint   | 65     | I . 00 JJJJ        | Call interrupt with 00 as argument, and goto JJJJ if interrupt returns !0
 |  |  |  |
-| new    | 66     | I N . . . . . .    | Allocate a heap object and put reference into node
-| free   | 67     | I N . . . . . .    | Free a heap object by its réference
-| open   | 68     | I N . . . . . .    | Open a heap object, so that it can be entered
-| close  | 69     | I N . . . . . .    | Close a open heap object
+| new    | 66     | I . NN . . . .    | Allocate a heap object and put reference into node
+| free   | 67     | I . NN . . . .    | Free a heap object by its réference
+| open   | 68     | I . NN . . . .    | Open a heap object, so that it can be entered
+| close  | 69     | I . NN . . . .    | Close a open heap object
 |  |  |  |
-| slen   | 70     | I N N . . . . .    | Get string length
+| slen   | 70     | I . NN NN . .    | Get string length
 |  |  |  |
-| push   | 71     | I N . T DDDD       | Insert node into N subtree
-| ins    | 72     | I . . T DDDD       | Insert a new node
-| set    | 73     | I N . T DDDD       | Set a node
+| push   | 71     | I T NN DDDD       | Insert node into N subtree
+| ins    | 72     | I T . T DDDD       | Insert a new node
+| set    | 73     | I T NN DDDD       | Set a node
 | rem    | 74     | I . . . . . . .    | Remove the last node
-| clear  | 75     | I N . . . . . .    | Clear a nodes children
-| len    | 76     | I N . . . . . .    | Get length of current subtree
-| enter  | 77     | I N . . . . . .    | Enter a subtree
-| leave  | 78     | I . . . . . . .    | Leave the subtree
-| pop    | 79     | I N N . . . . .    | Put last node in subtree into node, and clear source node
+| clear  | 75     | I . NN . . . .    | Clear a nodes children
+| len    | 76     | I . NN . . . .    | Get length of current subtree
+| enter  | 77     | I . NN . . . .    | Enter a subtree
+| leave  | 78     | I . NN . . . .    | Leave the subtree
+| pop    | 79     | I . NN NN . .    | Put last node in subtree into node, and clear source node
 |  |  |  |
 | jmp    | 80     | I . . . JJJJ       | Jump to JJJJ
-| jtab   | 81     | I N 00 JJJJ        | Jump table, skip instruction if value is higher than 00
-| jneg   | 82     | I N . . JJJJ       | Jump to JJJJ if value is negative
-| jzr    | 83     | I N . . JJJJ       | Jump to JJJJ if value is zero
-| jpos   | 84     | I N . . JJJJ       | Jump to JJJJ if value is positive
-| jnul   | 85     | I N . . JJJJ       | Jump to JJJJ if value is null
-| call   | 86     | I N . T DDDD       | Call DDDD
-| return | 87     | I N . . . . . .    | Return a node, to the caller
+| jtab   | 81     | I 0 NN JJJJ        | Jump table, skip instruction if value is higher than 0
+| jneg   | 82     | I . NN JJJJ       | Jump to JJJJ if value is negative
+| jzr    | 83     | I . NN JJJJ       | Jump to JJJJ if value is zero
+| jpos   | 84     | I . NN JJJJ       | Jump to JJJJ if value is positive
+| jnul   | 85     | I . NN JJJJ       | Jump to JJJJ if value is null
+| call   | 86     | I T NN DDDD       | Call DDDD
+| return | 87     | I . NN . . . .    | Return a node, to the caller
 |  |  |  |
-| add    | 88     | I N . T DDDD       | Add
-| sub    | 89     | I N . T DDDD       | Subtract
-| mul    | 90     | I N . T DDDD       | Multiply
-| div    | 91     | I N . T DDDD       | Divide
-| mod    | 92     | I N . T DDDD       | Modulo
-| neg    | 93     | I N . . . . . .    | Negate (* -1)
-| floor  | 94     | I N . . . . . .    | Floor, round down to next full number
-| ceil   | 95     | I N . . . . . .    | Ceil, round up to next full number
+| add    | 88     | I T NN DDDD       | Add
+| sub    | 89     | I T NN DDDD       | Subtract
+| mul    | 90     | I T NN DDDD       | Multiply
+| div    | 91     | I T NN DDDD       | Divide
+| mod    | 92     | I T NN DDDD       | Modulo
+| neg    | 93     | I . NN . . . .    | Negate (* -1)
+| floor  | 94     | I . NN . . . .    | Floor, round down to next full number
+| ceil   | 95     | I . NN . . . .    | Ceil, round up to next full number
 
 
 
