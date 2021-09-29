@@ -109,10 +109,11 @@ VM_USED
 static volatile const char vm_build_information_string[] = 
 	"  \x06             "
 	"\n--------------\n"
+	"| treeVM       \n"
 	"| "__DATE__"  \n"
 	"| "__TIME__"     \n"
 	"|              \n"
-	"| Version 1.0  \n"
+	"| Ver. 1.0.0   \n"
 	"| MIT LICENSE  \n"
 	"+--------------\n"
 	"                ";

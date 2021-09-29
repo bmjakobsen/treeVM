@@ -20,7 +20,7 @@ int vmx_dynlib_test(const uint32_t fn_id) { return(1); }
 
 vm_error_t vmx_provide_heap_size(uint32_t size) { return(0); }
 
-//const unsigned int VMX_LHCAT = 8;
+const unsigned int VMX_LHCAT = 8;
 
 
 int main() {
