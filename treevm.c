@@ -106,15 +106,15 @@ Define vm options with -Doption
 
 
 VM_USED
-static volatile const char vm_information_string[] = 
+static volatile const char vm_build_information_string[] = 
 	"  \x06             "
-	"+--------------+"
-	"| "__DATE__"  |"
-	"| "__TIME__"     |"
-	"|              |"
-	"| Version 1.0  |"
-	"| MIT LICENSE  |"
-	"+--------------+"
+	"\n--------------\n"
+	"| "__DATE__"  \n"
+	"| "__TIME__"     \n"
+	"|              \n"
+	"| Version 1.0  \n"
+	"| MIT LICENSE  \n"
+	"+--------------\n"
 	"                ";
 
 
@@ -248,7 +248,7 @@ vm_error_t vm_run_main(const vm_instruction_t * const restrict ip, vm_node_t * c
 
 	//Trick the compiler to not delete a variable
 	vm_print_information(1);
-	if (vm_information_string[2] != '\x06') {
+	if (vm_build_information_string[2] != '\x06') {
 		return(VM_ERROR_NO_0X06);
 	}
 
@@ -285,24 +285,16 @@ void vm_print_information(volatile int no_print) {
 	
 	printf("Time: %s\n", __TIME__);
 	printf("Date: %s\n", __DATE__);
-	printf("\\x06: 0x%.2x\n\n", vm_information_string[2]);
+	printf("\\x06: %c 0x%.2x\n\n", vm_build_information_string[2], vm_build_information_string[2]);
 	
+	printf("%s\n\n", vm_build_information_string);
+
 	printf("Data Size:\n");
 	printf("\tProgram: %u\n", (unsigned int) sizeof(struct vm_core));
 	printf("\tHeap: %u\n", (unsigned int) sizeof(struct vm_heap));
 	printf("\tHeap Node: %u\n", (unsigned int) sizeof(struct vm_heap_node));
 	printf("\tNode: %u\n", (unsigned int) sizeof(vm_node_t));
 	printf("\tSubtree: %u\n", (unsigned int) sizeof(struct vm_node_subtree));
-	
-	/*
-	printf("Pointer Size:\n");
-	printf("\tPointer: %u", (unsigned int) sizeof(void*));
-	printf("\t | %u", (unsigned int) sizeof(uintptr_t));
-	printf("\t | %"PRIuPTR"\n", UINTPTR_MAX);
-	
-	printf("VM Configuration:\n");
-	printf("\tMode: %s\n", MACRO_STRING(VM_INTERPRETER));
-	*/
 
 	printf("Heap Area tests:\n");
 	printf("\tHeap area: Count:%lu Max:%lu\n", (unsigned long) VM_LHAREA_C, (unsigned long) vm_heap_get_area(VM_HEAP_MAX_COUNT - 1));
