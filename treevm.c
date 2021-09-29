@@ -226,6 +226,7 @@ static vm_error_t vm_call_node2(const vm_instruction_t * const ip_call, vm_node_
 }
 
 
+VM_USED
 vm_error_t vm_call_node(const vm_instruction_t * const ip, vm_node_t * const root) {
 	if (running == 0) {
 		return(VM_ERROR_VM_NOT_RUNNING);
@@ -240,6 +241,7 @@ vm_error_t vm_call_node(const vm_instruction_t * const ip, vm_node_t * const roo
 }
 
 
+VM_USED
 vm_error_t vm_run_main(const vm_instruction_t * const restrict ip, vm_node_t * const restrict root) {
 	vm_error_t error;
 
@@ -276,7 +278,7 @@ vm_error_t vm_run_main(const vm_instruction_t * const restrict ip, vm_node_t * c
 
 
 
-
+VM_USED
 void vm_print_information(volatile int no_print) {
 	if (no_print)
 		return;
