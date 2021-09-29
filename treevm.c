@@ -287,7 +287,7 @@ void vm_print_information(volatile int no_print) {
 	printf("Date: %s\n", __DATE__);
 	printf("\\x06: %c 0x%.2x\n\n", vm_build_information_string[2], vm_build_information_string[2]);
 	
-	printf("%s\n\n", vm_build_information_string);
+	printf("Build information:\n%s\n\n", vm_build_information_string);
 
 	printf("Data Size:\n");
 	printf("\tProgram: %u\n", (unsigned int) sizeof(struct vm_core));
