@@ -23,6 +23,6 @@ vm_error_t vmx_provide_heap_size(uint32_t size) { return(0); }
 
 int main() {
 	printf("%.8f\n\n", VM_MAX_PRECISE_DOUBLE);
-	vm_print_information();
+	vm_print_information(0);
 	getchar();
 }

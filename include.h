@@ -26,6 +26,7 @@ typedef enum vm_error {
 	VM_ERROR_INIT_OUT_OF_MEMORY = 128,
 	VM_ERROR_OUT_OF_MEMORY = 129,
 	VM_ERROR_VM_NOT_RUNNING = 130,
+	VM_ERROR_NO_0X06 = 131,
 	
 
 	//Heap Errors (144 - 159)
@@ -293,7 +294,7 @@ extern const double VM_MAX_PRECISE_DOUBLE;
 
 
 //Functions exported
-extern void vm_print_information(void);
+extern void vm_print_information(volatile int no_print);
 extern vm_error_t vm_call_node(const vm_instruction_t *ip, vm_node_t *root);
 extern vm_error_t vm_run_main(const vm_instruction_t *ip, vm_node_t *root);
 

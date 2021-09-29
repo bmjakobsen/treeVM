@@ -235,7 +235,7 @@ The following globals are exposed to the loader/interpreter
 | Declaration                                                          | Purpose
 | -------------------------------------------------------------------- | -------
 | const double VM_MAX_PRECISE_DOUBLE                                   | Biggest precise integer a double can represent
-| void vm_print_information(void)                                      | Print vm information
+| void vm_print_information(volatile int no_print)                     | Print vm information, if no_print isnt set
 | vm_error_t vm_run_main(const vm_instruction_t *ip, vm_node_t *root)  | Function for running the vm, also initializes the vm
 | vm_error_t vm_call_node(const vm_instruction_t *ip, vm_node_t *root) | Function for running a function call
 | vm_error_t vm_node_copy_value(vm_node_t *src, vm_node_t *trg)        | 

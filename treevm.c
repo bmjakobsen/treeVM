@@ -40,6 +40,7 @@ Define vm options with -Doption
 		#define GOTO(ptr_to_label) goto *ptr_to_label
 		
 		#define VM_NOINLINE __attribute__((noinline, noclone))
+		#define VM_USED __attribute__((used))
 	#endif
 	
 	/* Check for clang 3.0+ */
@@ -50,11 +51,13 @@ Define vm options with -Doption
 		#define GOTO(ptr_to_label) goto *ptr_to_label
 		
 		#define VM_NOINLINE __attribute__((noinline, noclone))
+		#define VM_USED __attribute__((used))
 	#endif
 #endif
 
-#ifndef VM_NOINLINE
+#ifndef VM_GOTO_MODE
 	#define VM_NOINLINE
+	#define VM_USED
 #endif
 
 
@@ -99,6 +102,20 @@ Define vm options with -Doption
 #else
 	#define VM_SIZE_MAX UINTPTR_MAX
 #endif
+
+
+
+VM_USED
+static volatile const char vm_information_string[] = 
+	"  \x06             "
+	"+--------------+"
+	"| "__DATE__"  |"
+	"| "__TIME__"     |"
+	"|              |"
+	"| Version 1.0  |"
+	"| MIT LICENSE  |"
+	"+--------------+"
+	"                ";
 
 
 
@@ -225,12 +242,21 @@ vm_error_t vm_call_node(const vm_instruction_t * const ip, vm_node_t * const roo
 
 vm_error_t vm_run_main(const vm_instruction_t * const restrict ip, vm_node_t * const restrict root) {
 	vm_error_t error;
+
+
+	//Trick the compiler to not delete a variable
+	vm_print_information(1);
+	if (vm_information_string[2] != '\x06') {
+		return(VM_ERROR_NO_0X06);
+	}
+
+
 	if ((error = vm_heap_init()))
 		return(error);
 	
 
 	running = 1;
-	
+
 	error = vm_call_node(ip, root);
 
 	running = 0;
@@ -251,7 +277,14 @@ vm_error_t vm_run_main(const vm_instruction_t * const restrict ip, vm_node_t * c
 
 
 
-void vm_print_information() {
+void vm_print_information(volatile int no_print) {
+	if (no_print)
+		return;
+	
+	printf("Time: %s\n", __TIME__);
+	printf("Date: %s\n", __DATE__);
+	printf("\\x06: 0x%.2x\n\n", vm_information_string[2]);
+	
 	printf("Data Size:\n");
 	printf("\tProgram: %u\n", (unsigned int) sizeof(struct vm_core));
 	printf("\tHeap: %u\n", (unsigned int) sizeof(struct vm_heap));
