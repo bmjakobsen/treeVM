@@ -1,13 +1,15 @@
+.text
 Test
- 
-         
+
+.skip    
 Test2
 Test3
 
 Test4
 
 
-
+.data
 Test5  
   Test6
             Test Test TEst   
+Test  ;asdlpkoüikoidddddddddddd
