@@ -11,11 +11,13 @@
 
 
 #undef VMX_LHCAT
+#undef VM_LHAREA
+#undef VM_LHAREA_COUNT
 #ifndef EXPLICIT_LHCAT
 	#define VMX_LHCAT 8
 #endif
 #define VM_LHAREA (1<<VMX_LHCAT)
-#define VM_LHAREA_C (32 - VMX_LHCAT)
+#define VM_LHAREA_COUNT (32 - VMX_LHCAT)
 
 
 
@@ -47,7 +49,7 @@ struct vm_heap {
 
 
 #define VM_HEAP_MAX_SIZE2 (VM_SIZE_MAX/sizeof(struct vm_heap_node))		//the maximum the size_t type allows
-static const uint32_t VM_HEAP_MAX_COUNT = (0x80000000 > VM_HEAP_MAX_SIZE2) ? ((uint32_t) VM_HEAP_MAX_SIZE2) : 0x80000000;
+static const uint32_t VM_HEAP_MAX_SIZE = (0x80000000 > VM_HEAP_MAX_SIZE2) ? ((uint32_t) VM_HEAP_MAX_SIZE2) : 0x80000000;
 #undef VM_HEAP_MAX_SIZE2
 
 
@@ -132,7 +134,7 @@ static void vm_heap_destroy() {
 static vm_error_t vm_heap_expand() {
 	const uint32_t lsize = vm_heap.size; const uint32_t lsize2 = lsize * 2; 
 	
-	if (vm_heap.area_len >= VM_LHAREA_C || lsize2 > VM_HEAP_MAX_COUNT) {
+	if (vm_heap.area_len >= VM_LHAREA_COUNT || lsize2 > VM_HEAP_MAX_SIZE) {
 		return(VM_ERROR_HEAP_REACHED_MAX_SIZE);
 	}
 	

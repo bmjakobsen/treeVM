@@ -79,6 +79,7 @@ Define vm options with -Doption
 
 /* Macros */
 #define VM_NODES_STARTING_SIZE 8
+#define VM_LHAREA_COUNT 32
 
 
 #define MACRO_STRING2(x) #x
@@ -105,19 +106,6 @@ Define vm options with -Doption
 
 
 
-VM_USED
-static volatile const char vm_build_information_string[] = 
-	"  \x06             "
-	"\n--------------\n"
-	"| treeVM       \n"
-	"| "__DATE__"  \n"
-	"| "__TIME__"     \n"
-	"|              \n"
-	"| Ver. 1.0.0   \n"
-	"| MIT LICENSE  \n"
-	"+--------------\n"
-	"                ";
-
 
 
 //Get the max size of a subtree
@@ -139,14 +127,6 @@ static int running = 0;
 #undef TREEVM_FUNCTIONS_H_
 #include "./heap.h"
 #include "./functions.h"
-
-
-
-
-//Ignore this, this is for tricking the intellisense
-#ifndef VM_LHAREA_C
-	#define VM_LHAREA_C 32
-#endif
 
 
 
@@ -247,10 +227,8 @@ vm_error_t vm_run_main(const vm_instruction_t * const restrict ip, vm_node_t * c
 	vm_error_t error;
 
 
-	//Trick the compiler to not delete a variable
-	vm_print_information(1);
-	if (vm_build_information_string[2] != '\x06') {
-		return(VM_ERROR_NO_0X06);
+	if (vm_get_build_information(1)) {
+		return(VM_ERROR_INVALID_BUILD_INFORMATION);
 	}
 
 
@@ -262,11 +240,9 @@ vm_error_t vm_run_main(const vm_instruction_t * const restrict ip, vm_node_t * c
 
 	error = vm_call_node(ip, root);
 
-	running = 0;
-
-
 	//Clean up the returned value
 	vmx_return_cleanup(root, error);
+	running = 0;
 	vm_node_clear_children(root);
 	
 	
@@ -279,24 +255,35 @@ vm_error_t vm_run_main(const vm_instruction_t * const restrict ip, vm_node_t * c
 
 
 
-VM_USED
-void vm_print_information(volatile int no_print) {
-	if (no_print)
-		return;
+VM_NOINLINE
+int vm_get_build_information(volatile int no_print) {
+	VM_USED
+	static volatile const char vm_build_information_string[] = 
+		"  \x06             "
+		"\n--------------\n"
+		"| treeVM       \n"
+		"| "__DATE__"  \n"
+		"| "__TIME__"     \n"
+		"|              \n"
+		"| Ver. 1.0.0   \n"
+		"| MIT LICENSE  \n"
+		"+--------------\n"
+		"                ";
 	
-	printf("Time: %s\n", __TIME__);
-	printf("Date: %s\n", __DATE__);
-	printf("\\x06: %c 0x%.2x\n\n", vm_build_information_string[2], vm_build_information_string[2]);
-	
-	printf("Build information:\n%s\n\n", vm_build_information_string);
+	if (no_print == 0) {
+		printf("Build information:\n%s\n\n", vm_build_information_string);
 
-	printf("Data Size:\n");
-	printf("\tProgram: %u\n", (unsigned int) sizeof(struct vm_core));
-	printf("\tHeap: %u\n", (unsigned int) sizeof(struct vm_heap));
-	printf("\tHeap Node: %u\n", (unsigned int) sizeof(struct vm_heap_node));
-	printf("\tNode: %u\n", (unsigned int) sizeof(vm_node_t));
-	printf("\tSubtree: %u\n", (unsigned int) sizeof(struct vm_node_subtree));
+		printf("Data Size:\n");
+		printf("\tProgram: %u\n", (unsigned int) sizeof(struct vm_core));
+		printf("\tHeap: %u\n", (unsigned int) sizeof(struct vm_heap));
+		printf("\tHeap Node: %u\n", (unsigned int) sizeof(struct vm_heap_node));
+		printf("\tNode: %u\n", (unsigned int) sizeof(vm_node_t));
+		printf("\tSubtree: %u\n", (unsigned int) sizeof(struct vm_node_subtree));
 
-	printf("Heap Area tests:\n");
-	printf("\tHeap area: Count:%lu Max:%lu\n", (unsigned long) VM_LHAREA_C, (unsigned long) vm_heap_get_area(VM_HEAP_MAX_COUNT - 1));
+		printf("Heap Area tests:\n");
+		printf("\tHeap area: Count:%lu Max:%lu\n", (unsigned long) VM_LHAREA_COUNT, (unsigned long) vm_heap_get_area(VM_HEAP_MAX_SIZE - 1));
+	}
+
+
+	return(vm_build_information_string[2] != '\x06');
 }
