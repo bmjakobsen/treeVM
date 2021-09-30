@@ -10,7 +10,14 @@ enum asm_sections {
 	NO_SECTION = 0,
 	DATA_SECTION = 1,
 	TEXT_SECTION = 2,
-	SKIP_SECTION = 3,
+};
+
+enum asm_declaration {
+	TYPE_NONE = 0,
+	TYPE_GLOBAL = 1,
+	TYPE_LOCAL = 2,
+	TYPE_LABEL = 3,
+	TYPE_INSTRUCTION = 4,
 };
 
 typedef struct asm_line {
@@ -21,6 +28,8 @@ typedef struct asm_line {
 	
 	enum asm_sections section;
 	struct asm_line *next_section;
+
+	enum asm_declaration type;
 } aline_t;
 #define LINE_INITIALIZER (aline_t) {0}
 
@@ -33,8 +42,30 @@ enum asm_error {
 };
 
 
-#define ERROR(code, msg) { error_0 = code; error_0MSG = msg "\n"; goto error_l; }
-#define ERROR_LINE(code, msg, line) { error_0 = code; error_0MSG = msg "\n"; error_line = line; goto error_l; }
+
+static int error_code = 0;
+static char * error_message = NULL;
+static long int error_line = 0;
+	
+static FILE *source = NULL;
+static char *file = NULL;
+static aline_t *line = NULL;
+static long int line_len = 0;
+
+
+
+
+int parse_data(aline_t *line) {
+	return(1);
+}
+int parse_text(aline_t *line) {
+	return(1);
+}
+
+
+
+#define ERROR(code, msg) { error_code = code; error_message = msg "\n"; goto error_l; }
+#define ERROR_LINE(code, msg, line) { error_code = code; error_message = msg "\n"; error_line = line; goto error_l; }
 
 int main(int argc, char *argv[]) {
 	//Test for correct number of arguments
@@ -44,16 +75,6 @@ int main(int argc, char *argv[]) {
 	}
 	
 	
-	int error_0 = 0;
-	char * error_0MSG = NULL;
-	long int error_line = 0;
-	
-
-
-	FILE *source = NULL;
-	char *file = NULL;
-	aline_t *line = NULL;
-	long int line_len = 0;
 
 
 
@@ -83,7 +104,7 @@ int main(int argc, char *argv[]) {
 		
 		
 		//Allocate line array
-		line = malloc(256 * sizeof(aline_t));
+		line = malloc(257 * sizeof(aline_t));
 		if (line == NULL)
 			ERROR(ERROR_OUT_OF_MEMORY, "Out of Memory")
 		unsigned long int line_size = 256;
@@ -132,7 +153,7 @@ int main(int argc, char *argv[]) {
 			if (line_not_empty) {
 				//Reallocate line array if necessary
 				if (line_len + 1 >= line_size) {
-					void *tp = realloc(line, line_size * sizeof(aline_t));
+					void *tp = realloc(line, (line_size + 1) * sizeof(aline_t));
 					if (tp == NULL)
 						ERROR(ERROR_OUT_OF_MEMORY, "Out of Memory")
 					line = tp;
@@ -173,15 +194,18 @@ int main(int argc, char *argv[]) {
 	//Divide the code into sections
 	{
 		int section = NO_SECTION;
+		int has_section[2] = {0,0};
+
+
 		aline_t ** last_section = &section_list;
 		for (long int i = 0; i < line_len; i++) {
 			if (line[i].length == 5) {
 				if (strcmp(line[i].p, ".data") == 0) {
 					section = DATA_SECTION;
+					has_section[0] = 1;
 				} else if (strcmp(line[i].p, ".text") == 0) {
 					section = TEXT_SECTION;
-				} else if (strcmp(line[i].p, ".skip") == 0) {
-					section = SKIP_SECTION;
+					has_section[1] = 1;
 				} else {
 					goto not_valid_section_l;
 				}
@@ -199,6 +223,21 @@ int main(int argc, char *argv[]) {
 				line[i].section = section;
 			}
 		}
+
+		line[line_len].section = NO_SECTION;
+	}
+
+	//Parse Data and text areas
+	{
+		aline_t *lsection = section_list;
+		while (lsection != NULL) {
+			if (lsection[1].section == DATA_SECTION) {
+				parse_data(lsection + 1);
+			} else {
+				parse_text(lsection + 1);
+			}
+			lsection = lsection->next_section;
+		}
 	}
 
 
@@ -210,12 +249,12 @@ int main(int argc, char *argv[]) {
 
 
 	error_l:
-	if (error_0 != 0) {
+	if (error_code != 0) {
 		if (error_line) {
 			char lbuf[17] = {0};
 			fprintf(stderr, "Line %li: %s\n", error_line, line[error_line].rp);
 		}
-		perror(error_0MSG);
+		perror(error_message);
 	}
 	
 	
@@ -226,5 +265,5 @@ int main(int argc, char *argv[]) {
 	if (line != NULL)
 		free(line);
 	
-	return(error_0);
+	return(error_code);
 }
