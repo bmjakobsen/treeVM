@@ -1,0 +1,12 @@
+; Test file for the assembler
+
+; Comment
+
+.data       ; Section
+Test1
+Test2
+
+.text       ; Section
+  Test3
+  Test4  
+Test5  ; Comment2
