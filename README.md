@@ -221,13 +221,13 @@ The following globals and functions must be defined so that the VM can be used
 | void vmx_interpreter_unlock(void)                         | Function, equivalent to vmx_interpreter_unlock
 | int vmx_interrupt(uint16_t int_id)                        | Function, interrupt that can be called by the program, jumps if it returns !0
 | void vmx_return_clean(vm_node_t *node, vm_error_t error)  | Function, cleaning up the return value, subtree is cleared after
+| vm_error_t vmx_provide_heap_size(uint32_t size)           | Function, gets called by the vm when the heap is resized
 | vm_error_t (* const vmx_corelib[])(vm_node_t *)           | Library functions, functions can return !0 on error
 | const uint32_t vmx_corelib_len                            | Length of corelib
 | vm_error_t (* * vmx_extlib)(vm_node_t *)                  | Extended Library functions, same as corelib, but isnt constant at startup
 | uint32_t vmx_extlib_len                                   | Extended Length of langlib
 | vm_error_t vmx_dynlib(uint32_t fn_id, vm_node_t *node)    | Function, calling dynamic functions
 | int vmx_dynlib_test(uint32_t fn_id)                       | Function, testing if a dynamic function is available
-| vm_error_t vmx_provide_heap_size(uint32_t size)           | Function, gets called by the vm when the heap is resized
 | const unsigned int VMX_LHCAT								| Only required with -DEXPLICIT_LHCAT flag, sets the least heap size category
 
 
@@ -236,7 +236,7 @@ The following globals are exposed to the loader/interpreter
 | Declaration                                                          | Purpose
 | -------------------------------------------------------------------- | -------
 | const double VM_MAX_PRECISE_DOUBLE                                   | Biggest precise integer a double can represent
-| void vm_print_information(volatile int no_print)                     | Print vm information, if no_print isnt set
+| int vm_get_build_information(volatile int no_print)                  | Print vm information, if no_print isnt set
 | vm_error_t vm_run_main(const vm_instruction_t *ip, vm_node_t *root)  | Function for running the vm, also initializes the vm
 | vm_error_t vm_call_node(const vm_instruction_t *ip, vm_node_t *root) | Function for running a function call
 | vm_error_t vm_node_copy_value(vm_node_t *src, vm_node_t *trg)        | 

@@ -26,7 +26,7 @@ typedef enum vm_error {
 	VM_ERROR_INIT_OUT_OF_MEMORY = 128,
 	VM_ERROR_OUT_OF_MEMORY = 129,
 	VM_ERROR_VM_NOT_RUNNING = 130,
-	VM_ERROR_NO_0X06 = 131,
+	VM_ERROR_INVALID_BUILD_INFORMATION = 131,
 	
 
 	//Heap Errors (144 - 159)
@@ -274,6 +274,7 @@ extern void vmx_interpreter_unlock(void);
 
 extern int vmx_interrupt(uint16_t int_id);
 extern void vmx_return_cleanup(vm_node_t * node, vm_error_t error);
+extern vm_error_t vmx_provide_heap_size(uint32_t size);			//Gets called when the heap is resized to provide the new heap size for the loader
 
 extern vm_error_t (* const vmx_corelib[])(vm_node_t *);
 extern const uint32_t vmx_corelib_len;
@@ -284,7 +285,7 @@ extern uint32_t vmx_extlib_len;
 extern vm_error_t vmx_dynlib (uint32_t fn_id, vm_node_t *node);			//Runs dynamic function with node as argument
 extern int vmx_dynlib_test (uint32_t fn_id);						//Returns !0 if the dynamic function doesnt exist
 
-extern vm_error_t vmx_provide_heap_size(uint32_t size);			//Gets called when the heap is resized to provide the new heap size for the loader
+
 
 extern const unsigned int VMX_LHCAT;
 
@@ -294,7 +295,7 @@ extern const double VM_MAX_PRECISE_DOUBLE;
 
 
 //Functions exported
-extern void vm_print_information(volatile int no_print);
+extern int vm_get_build_information(volatile int no_print);
 extern vm_error_t vm_call_node(const vm_instruction_t *ip, vm_node_t *root);
 extern vm_error_t vm_run_main(const vm_instruction_t *ip, vm_node_t *root);
 
