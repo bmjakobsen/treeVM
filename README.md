@@ -46,25 +46,35 @@ the size field of the string header is ignored, so it is recommended that both f
 ## Opcodes
 ### Data types
 See also enum vm_node_type
-| Name        | Id | Insertable | Internal | Callable | Additional information
-| ------------|:--:| ---------- | -------- | -------- | -------------
-| null        | 0  | X          | X        |          | 
-| int32       | 1  | X          |          |          | will be converted to double (number)
-| uint32      | 2  | X          |          |          | will be converted to double (number)
-| float       | 3  | X          |          |          | will be converted to double (number)
-| number      | 4  | X          | X        |          | must be read from data area, using dpc_address
-| string      | 5  | X          | X        |          | must be read from data area, using dpc_address
-| value       | 6  | X          |          |          | Set to value of node, without children
-| node        | 7  | X          |          |          | Set to value of node, with children
-| cut node    | 8  | X          |          |          | Set to value of node, with children, and remove original
-| pop node    | 9  | X          |          |          | Set to value of node in subtree, and remove last node
-| function    | 12 | X          | X        | X        | Bytecode function
-| core_func.  | 13 | X          | X        | X        | Core Library function
-| ext_func.   | 14 | X          | X        | X        | Extended Library function
-| dyn_func.   | 15 | X          | X        | X        | Dynamic Library function
-| call        | 17 |            | X        |          | 
-| object ref. | 18 |            | X        |          | Object reference
-| custom type | 19 |            | X        |          | Custom data type
+| Name        | Id | Insertable | Internal | Callable | Arithmetic | Additional information
+| ------------|:--:| ---------- | -------- | -------- | ---------- | -------------
+| null        | 0  | X          | X        |          |            | 
+| int32       | 1  | X          |          |          | X          | will be converted to double (number)
+| uint32      | 2  | X          |          |          | X          | will be converted to double (number)
+| float       | 3  | X          |          |          | X          | will be converted to double (number)
+| number      | 4  | X          | X        |          | X          | must be read from data area, using dpc_address
+| string      | 5  | X          | X        |          |            | must be read from data area, using dpc_address
+| value       | 6  | X          |          | X        | X          | Set to value of node, without children
+| node        | 7  | X          |          |          |            | Set to value of node, with children
+| cut node    | 8  | X          |          | X        | X          | Set to value of node, with children, and remove original
+| pop node    | 9  | X          |          |          |            | Set to value of node in subtree, and remove last node
+| function    | 12 | X          | X        | X        |            | Bytecode function
+| core_func.  | 13 | X          | X        | X        |            | Core Library function
+| ext_func.   | 14 | X          | X        | X        |            | Extended Library function
+| dyn_func.   | 15 | X          | X        | X        |            | Dynamic Library function
+| call        | 17 |            | X        |          |            |
+| object ref. | 18 |            | X        |          |            | Object reference
+| custom type | 19 |            | X        |          |            | Custom data type
+
+
+#### Callable Types
+Callable types can be called with the Call instruction,
+value and pop-node types are indirect and instead refer to a node with a callable type
+
+
+#### Arithemtic Types
+Arithmetic types can be used in the arithmetic instructions,
+value and pop-node types are indirect and instead refer to a node with a callable type
 
 
 ### Format
@@ -110,14 +120,14 @@ Instructions are always 8 bytes long
 | jzr    | 83     | I . NN JJJJ       | Jump to JJJJ if value is zero
 | jpos   | 84     | I . NN JJJJ       | Jump to JJJJ if value is positive
 | jnul   | 85     | I . NN JJJJ       | Jump to JJJJ if value is null
-| call   | 86     | I T NN DDDD       | Call DDDD
+| call   | 86     | I T NN DDDD       | Call DDDD, the Operant must be a Callable types
 | return | 87     | I . NN . . . .    | Return a node, to the caller
 |  |  |  |
-| add    | 88     | I T NN DDDD       | Add
-| sub    | 89     | I T NN DDDD       | Subtract
-| mul    | 90     | I T NN DDDD       | Multiply
-| div    | 91     | I T NN DDDD       | Divide
-| mod    | 92     | I T NN DDDD       | Modulo
+| add    | 88     | I T NN DDDD       | Add, the operant must be an Arithmetic type
+| sub    | 89     | I T NN DDDD       | Subtract, the operant must be an Arithmetic type
+| mul    | 90     | I T NN DDDD       | Multiply, the operant must be an Arithmetic type
+| div    | 91     | I T NN DDDD       | Divide, the operant must be an Arithmetic type
+| mod    | 92     | I T NN DDDD       | Modulo, the operant must be an Arithmetic type
 | neg    | 93     | I . NN . . . .    | Negate (* -1)
 | floor  | 94     | I . NN . . . .    | Floor, round down to next full number
 | ceil   | 95     | I . NN . . . .    | Ceil, round up to next full number
