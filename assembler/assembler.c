@@ -31,7 +31,7 @@ typedef struct asm_line {
 	long int line;		//Real line number, required for debugging
 	size_t length;		//Length of the line
 	char *p;			//Line
-	const char * rp;	//Unmodified line, needed for the printing of errors
+	char * rp;	//Unmodified line, needed for the printing of errors
 	
 	enum asm_sections section;
 	struct asm_line *next_section;
@@ -63,6 +63,7 @@ enum asm_error {
 	ERROR_FSEEK_ERROR = 6,
 	ERROR_UNRECOGNIZED_TOKEN = 7,
 	ERROR_EXPECTED_TOKEN = 8,
+	ERROR_LINE_TOO_LONG = 9,
 };
 
 
@@ -93,7 +94,7 @@ int strctok(const char * string, const char *delim) {
 
 static int error_code = 0;
 static char * error_message = NULL;
-static long int error_line = 0;
+static long int error_line = -1;
 	
 static FILE *source = NULL;
 static char *file = NULL;
@@ -246,7 +247,7 @@ int main(int argc, char *argv[]) {
 		file = malloc(sizeof(char) * (fsize + 2) * 2);		//Allocate double size, for storing two copys
 		if (file == NULL)
 			ERROR(ERROR_OUT_OF_MEMORY, "Out of Memory")
-		memset(file, 0, sizeof(char) * (fsize + 2));
+		memset(file, 0, sizeof(char) * (fsize + 2) * 2);
 		
 		
 		//Allocate line array
@@ -262,11 +263,17 @@ int main(int argc, char *argv[]) {
 		for (long int real_line = 1; fgets(file2, max_line_size, source) != NULL; real_line++) {
 			//Read real line
 			size_t rlen = strlen(file2);
+			if (rlen >= max_line_size) {
+				line[0].line = real_line;
+				line[0].rp = file2;
+				ERROR_LINE(ERROR_LINE_TOO_LONG, "Line too long", 0);
+			}
 			strcpy(file3, file2);
 			while (rlen > 0 && (file3[rlen - 1] == ' ' || file3[rlen - 1] == '\t' || file3[rlen - 1] == '\r' || file3[rlen - 1] == '\n')) {
 				file3[rlen - 1] = '\0';
 				rlen--;
 			}
+
 
 			//Remove comment
 			char *comment = strchr(file2, ';');
@@ -403,12 +410,18 @@ int main(int argc, char *argv[]) {
 
 	error_l:
 	if (error_code != 0) {
-		printf(0);
-		if (error_line) {
+		fprintf(stderr, "%s", error_message);
+		if (error_line >= 0) {
 			char lbuf[17] = {0};
-			fprintf(stderr, "Line %li: %s\n", error_line, line[error_line].rp);
+
+
+			size_t len = strlen(line[error_line].rp);
+			while (len > 0 && (line[error_line].rp[len - 1] == ' ' || line[error_line].rp[len - 1] == '\t' || line[error_line].rp[len - 1] == '\r' || line[error_line].rp[len - 1] == '\n')) {
+				line[error_line].rp[len - 1] = '\0';
+				len--;
+			}
+			fprintf(stderr, "Line %li: \"%s\"\n", line[error_line].line, line[error_line].rp);
 		}
-		perror(error_message);
 	}
 	
 	
