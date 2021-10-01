@@ -259,7 +259,7 @@ VM_NOINLINE
 int vm_get_build_information(volatile int no_print) {
 	VM_USED
 	static volatile const char vm_build_information_string[] = 
-		"  \x06             "
+		"\x06               "
 		"\n--------------\n"
 		"| treeVM       \n"
 		"| "__DATE__"  \n"
@@ -271,7 +271,7 @@ int vm_get_build_information(volatile int no_print) {
 		"                ";
 	
 	if (no_print == 0) {
-		printf("Build information:\n%s\n\n", vm_build_information_string);
+		printf("Build information:\n %s\n\n", vm_build_information_string + 1);
 
 		printf("Data Size:\n");
 		printf("\tProgram: %u\n", (unsigned int) sizeof(struct vm_core));
@@ -285,5 +285,5 @@ int vm_get_build_information(volatile int no_print) {
 	}
 
 
-	return(vm_build_information_string[2] != '\x06');
+	return(vm_build_information_string[0] != '\x06');
 }
