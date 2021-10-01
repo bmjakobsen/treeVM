@@ -25,6 +25,8 @@ enum asm_declaration {
 	TYPE_DEFINE = 3,	
 	TYPE_LABEL = 4,
 	TYPE_INSTRUCTION = 5,
+	TYPE_DOUBLE = 6,
+	TYPE_STRING = 7,
 };
 
 typedef struct asm_line {
@@ -45,8 +47,14 @@ struct asm_name_list {
 		struct asm_name_entry2 {
 			char *value;
 			int token_count;
-		} declaration;
-		struct asm_name_entry2 macro;
+			enum asm_declaration type;
+			union asm_name_declaration_entry_value {
+				double number;
+				char *string;
+			} valuep;
+		} macro;
+		struct asm_name_entry2 label;
+		struct asm_name_entry2 declaration;
 		char *name;
 	} *name;
 
@@ -130,13 +138,12 @@ int parse_data(aline_t *line2) {
 		char *identifier = token;
 		
 		//Check if identifier is valid
-		#define ALPHABET  "abcdefghijklmnopqrstuvwxyz"
-		#define ALPHABET2 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-		if (*identifier >= '0' && *identifier <= 9 || strspn(identifier, ALPHABET ALPHABET2 "_0123456789") < strlen(identifier)) {
+		#define ID_ALPHABET  "abcdefghijklmnopqrstuvwxyz"
+		#define ID_ALPHABET2 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		#define ID_SPECIAL "-_0123456789"
+		if (*identifier >= '0' && *identifier <= 9 || strspn(identifier, ID_ALPHABET ID_ALPHABET2 ID_SPECIAL) < strlen(identifier)) {
 			ERROR_LINE(ERROR_PARSE_ERROR, "Invalid identifier", cline - line)
 		}
-		#undef ALPHABET
-		#undef ALPHABET2
 
 		struct asm_name_entry *entry = NULL;
 		find_name_entry_l:
@@ -173,6 +180,7 @@ int parse_data(aline_t *line2) {
 			name_list.name[name_list.length].name = identifier;
 
 			entry->declaration.value = NULL;
+			entry->label.value = NULL;
 			entry->macro.value = NULL;
 
 			name_list.length++;
@@ -188,15 +196,14 @@ int parse_data(aline_t *line2) {
 		} else {
 			if ((token = strtok(NULL, "")) == NULL)
 				ERROR_LINE(ERROR_EXPECTED_TOKEN, "Expected token", cline - line)
-
-			if (strctok(token, " \t") != 1)
-				ERROR_LINE(ERROR_UNRECOGNIZED_TOKEN, "Invalid Token at end of line", cline - line)
+			
 			
 			entry->declaration.value = token;
-			entry->declaration.token_count = 1;
+			//entry->declaration.token_count = 1;
 		}
 		//Implement token storing
 	}
+
 
 	return(0);
 }
@@ -399,6 +406,59 @@ int main(int argc, char *argv[]) {
 			}
 			lsection = lsection->next_section;
 		}
+		/*
+		for (long int i = 0; i < name_list.length; i++) {
+			if (name_list.name[i].declaration.value != NULL) {
+				char *dec = name_list.name[i].declaration.value;
+				if (*dec == '\"') {
+					#define ESCAPE_SEQUENCE_LEN 13
+					static const char *escape_sequences[2][ESCAPE_SEQUENCE_LEN] = {
+						{
+							"\\\\"
+							"\\\'",
+							"\\\"",
+							"\\\?"
+							"\\a",
+							"\\b",
+							"\\e",
+							"\\f",
+							"\\n",
+							"\\r",
+							"\\t",
+							"\\v",
+							"\\0"
+						},
+						{
+							"\\",
+							"\'",
+							"\"",
+							"\?",
+							"\a",
+							"\b",
+							"\e",
+							"\f",
+							"\n",
+							"\r",
+							"\t",
+							"\v",
+							"\0"
+						},
+					};
+
+					for (int i = 0; i < ESCAPE_SEQUENCE_LEN; i++) {
+						char *dec2 = dec + 1;
+						while((dec2 = strstr(dec2, escape_sequences[0][i])) != NULL) {
+							memmove(dec2, dec2 + 1, strlen(dec2));
+							*dec = *escape_sequences[1][i];
+						}
+					}
+					
+					char *dec2 = dec + 1;
+					strchr(dec2, '\"')
+				}
+			}
+		}
+		*/
 	}
 
 	printf("%s: %d %s\n", name_list.name[0].name, name_list.name[0].macro.token_count, name_list.name[0].macro.value);
