@@ -3,8 +3,7 @@
 ; Comment
 
 .data       ; Section
-Test1
-Test2
+ define Test Test Test Tes    ;Test declaration
 
 .text       ; Section
   Test3
