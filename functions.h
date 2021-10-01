@@ -268,6 +268,9 @@
 				if (*arg >= subtree->len) {
 					return(VM_ERROR_OUT_OF_RANGE_NODE);
 				}
+				if (&subtree->child[*arg] == node) {
+					return(VM_ERROR_CANT_INSERT_ITSELF);
+				}
 
 				//Clear node children
 				if ((lerror = vm_node_clear_children(node))) {
@@ -282,6 +285,9 @@
 			case(VM_TYPE_CUT_NODE):
 				if (*arg >= subtree->len) {
 					return(VM_ERROR_OUT_OF_RANGE_NODE);
+				}
+				if (&subtree->child[*arg] == node) {
+					return(VM_ERROR_CANT_INSERT_ITSELF);
 				}
 
 				//Clear node children
@@ -300,6 +306,9 @@
 			case(VM_TYPE_POP_NODE):
 				if (subtree->len > 0) {
 					return(VM_ERROR_OUT_OF_RANGE_NODE);
+				}
+				if (&subtree->child[subtree->len] == node) {
+					return(VM_ERROR_CANT_INSERT_AND_POP_NODE);
 				}
 
 				//Clear node children
