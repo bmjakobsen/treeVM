@@ -44,7 +44,8 @@ enum asm_error {
 	ERROR_UNABLE_TO_OPEN_FILE = 2,
 	ERROR_OUT_OF_MEMORY = 3,
 	ERROR_FTELL_NEGATIVE = 4,
-	ERROR_PARSE = 5,
+	ERROR_PARSE_ERROR = 5,
+	ERROR_FSEEK_ERROR = 6,
 };
 
 
@@ -91,7 +92,8 @@ int main(int argc, char *argv[]) {
 			ERROR(ERROR_UNABLE_TO_OPEN_FILE, "Unable to open file")
 		
 		//Get filesize
-		fseek(source, 0, SEEK_END);
+		if (fseek(source, 0, SEEK_END))
+			ERROR(ERROR_FSEEK_ERROR, "Fseek Error")
 		unsigned long int fsize = 0;
 		{
 			long int fsize2 = ftell(source);
@@ -99,11 +101,12 @@ int main(int argc, char *argv[]) {
 				ERROR(ERROR_FTELL_NEGATIVE, "Ftell Error")
 			fsize = (unsigned long int) fsize2;
 		}
-		fseek(source, 0, SEEK_SET);
+		if (fseek(source, 0, SEEK_SET))
+			ERROR(ERROR_FSEEK_ERROR, "Fseek Error")
 		
 		
 		//Allocate a file buffer
-		file = malloc(sizeof(char) * (fsize + 2) * 2);
+		file = malloc(sizeof(char) * (fsize + 2) * 2);		//Allocate double size, for storing two copys
 		if (file == NULL)
 			ERROR(ERROR_OUT_OF_MEMORY, "Out of Memory")
 		memset(file, 0, sizeof(char) * (fsize + 2));
@@ -223,7 +226,7 @@ int main(int argc, char *argv[]) {
 			} else {
 				not_valid_section_l:
 				if (section == NO_SECTION) {
-					ERROR_LINE(ERROR_PARSE, "Invalid Section", i);
+					ERROR_LINE(ERROR_PARSE_ERROR, "Invalid Section", i);
 				}
 
 				line[i].section = section;
