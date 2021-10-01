@@ -55,9 +55,9 @@ See also enum vm_node_type
 | number      | 4  | X          | X        |          | X          | must be read from data area, using dpc_address
 | string      | 5  | X          | X        |          |            | must be read from data area, using dpc_address
 | value       | 6  | X          |          | X        | X          | Set to value of node, without children
-| node        | 7  | X          |          |          |            | Set to value of node, with children
-| cut node    | 8  | X          |          | X        | X          | Set to value of node, with children, and remove original
-| pop node    | 9  | X          |          |          |            | Set to value of node in subtree, and remove last node
+| node        | 7  | X          |          |          |            | Set to value of node, with children, cant be set to the same node
+| cut node    | 8  | X          |          | X        | X          | Set to value of node, with children, and remove original, cant be set to the same node
+| pop node    | 9  | X          |          |          |            | Set to value of node in subtree, and remove last node, cant be done in the ins instruction
 | function    | 12 | X          | X        | X        |            | Bytecode function
 | core_func.  | 13 | X          | X        | X        |            | Core Library function
 | ext_func.   | 14 | X          | X        | X        |            | Extended Library function
@@ -66,6 +66,12 @@ See also enum vm_node_type
 | object ref. | 18 |            | X        |          |            | Object reference
 | custom type | 19 |            | X        |          |            | Custom data type
 
+
+#### Insertable Types
+These are types that can be inserted through the ins, set, push ... instructions as a literal
+
+#### Internal Types
+Internal types are types that the vm can store, other types are converted
 
 #### Callable Types
 Callable types can be called with the Call instruction,
