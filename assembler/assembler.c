@@ -20,11 +20,8 @@ enum asm_sections {
 
 enum asm_declaration {
 	TYPE_NONE = 0,
-	TYPE_GLOBAL = 1,
-	TYPE_LOCAL = 2,
-	TYPE_DEFINE = 3,	
+	TYPE_LOCAL = 2, 
 	TYPE_LABEL = 4,
-	TYPE_INSTRUCTION = 5,
 	TYPE_DOUBLE = 6,
 	TYPE_STRING = 7,
 };
@@ -46,15 +43,14 @@ struct asm_name_list {
 	struct asm_name_entry {
 		struct asm_name_entry2 {
 			char *value;
-			int token_count;
 			enum asm_declaration type;
 			union asm_name_declaration_entry_value {
 				double number;
 				char *string;
+				aline_t *label;
 			} valuep;
-		} macro;
-		struct asm_name_entry2 label;
-		struct asm_name_entry2 declaration;
+		} local;
+
 		char *name;
 	} *name;
 
@@ -122,12 +118,7 @@ int parse_data(aline_t *line2) {
 		if ((token = strtok(cline->p, " \t")) == NULL)
 			ERROR_LINE(ERROR_EXPECTED_TOKEN, "Expected token", cline - line)
 		//Get the type of the declaration
-		int type = 0;
-		if (strcmp(token, "local") == 0) {
-			type = TYPE_LOCAL;
-		} else if (strcmp(token, "define") == 0) {
-			type = TYPE_DEFINE;
-		} else {
+		if (strcmp(token, "local")) {
 			ERROR_LINE(ERROR_UNRECOGNIZED_TOKEN, "Expected token", cline - line)
 		}
 
@@ -140,68 +131,92 @@ int parse_data(aline_t *line2) {
 		//Check if identifier is valid
 		#define ID_ALPHABET  "abcdefghijklmnopqrstuvwxyz"
 		#define ID_ALPHABET2 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-		#define ID_SPECIAL "-_0123456789"
-		if (*identifier >= '0' && *identifier <= 9 || strspn(identifier, ID_ALPHABET ID_ALPHABET2 ID_SPECIAL) < strlen(identifier)) {
+		#define ID_NUMBER "0123456789"
+		if ((*identifier >= '0' && *identifier <= 9) || strspn(identifier, ID_ALPHABET ID_ALPHABET2 ID_NUMBER "-_") < strlen(identifier)) {
 			ERROR_LINE(ERROR_PARSE_ERROR, "Invalid identifier", cline - line)
 		}
 
-		struct asm_name_entry *entry = NULL;
-		find_name_entry_l:
+		
 		for (long int i = 0; i < name_list.length; i++) {
 			if (strcmp(identifier, name_list.name[i].name) == 0) {
-				if (type == TYPE_DEFINE && name_list.name[i].macro.value == NULL) {
-					entry = &name_list.name[i];
-					break;
-				} else if (type == TYPE_DEFINE && name_list.name[i].macro.value != NULL) {
-					ERROR_LINE(ERROR_PARSE_ERROR, "Duplicate macro definition", cline - line)
-				} else if (type == TYPE_LOCAL && name_list.name[i].macro.value != NULL) {
-					identifier = name_list.name[i].macro.value;
-					goto find_name_entry_l;
-				} else if (type == TYPE_LOCAL && name_list.name[i].declaration.value == NULL) {
-					entry = &name_list.name[i];
-					break;
-				} else if (type == TYPE_LOCAL && name_list.name[i].declaration.value != NULL) {
-					ERROR_LINE(ERROR_PARSE_ERROR, "Duplicate declaration", cline - line)
-				}
+				ERROR_LINE(ERROR_PARSE_ERROR, "Duplicate local declaration", cline - line)
 			}
 		}
 
-		if (entry == NULL) {
-			if (name_list.length >= name_list.size) {
-				void *t = realloc(name_list.name, sizeof(struct asm_name_entry) * name_list.size * 2);
-				if (t == NULL) {
-					ERROR_LINE(ERROR_OUT_OF_MEMORY, "Out of Memory", cline - line)
-				}
-				name_list.name = t;
-				name_list.size *= 2;
+		if (name_list.length >= name_list.size) {
+			void *t = realloc(name_list.name, sizeof(struct asm_name_entry) * name_list.size * 2);
+			if (t == NULL) {
+				ERROR_LINE(ERROR_OUT_OF_MEMORY, "Out of Memory", cline - line)
 			}
-
-			entry = &name_list.name[name_list.length];
-			name_list.name[name_list.length].name = identifier;
-
-			entry->declaration.value = NULL;
-			entry->label.value = NULL;
-			entry->macro.value = NULL;
-
-			name_list.length++;
+			name_list.name = t;
+			name_list.size *= 2;
 		}
 
-		//Get definition
-		if (type == TYPE_DEFINE) {
-			if ((token = strtok(NULL, "")) == NULL)
-				ERROR_LINE(ERROR_EXPECTED_TOKEN, "Expected token", cline - line)
-			
-			entry->macro.value = token;
-			entry->macro.token_count = strctok(token, " \t");
+		struct asm_name_entry *entry = &name_list.name[name_list.length];
+		name_list.name[name_list.length].name = identifier;
+
+		entry->local.value = NULL;
+
+		name_list.length++;
+
+		if ((token = strtok(NULL, "")) == NULL)
+			ERROR_LINE(ERROR_EXPECTED_TOKEN, "Expected token", cline - line)
+		
+		
+		entry->local.value = token;
+
+		char *dec = entry->local.value;
+		if (*dec == '\"') {
+			#define ESCAPE_SEQUENCE_LEN 13
+			static const char *escape_sequences[2][ESCAPE_SEQUENCE_LEN] = {
+				{
+					"\\\\",
+					"\\\?",
+					"\\a",
+					"\\b",
+					"\\e",
+					"\\f",
+					"\\n",
+					"\\r",
+					"\\t",
+					"\\v",
+					"\\\'",
+					"\""			//Special case, replace first unescaped " with NULL terminator
+					"\\\"",
+				},
+				{
+					"\\",
+					"\?",
+					"\a",
+					"\b",
+					"\e",
+					"\f",
+					"\n",
+					"\r",
+					"\t",
+					"\v",
+					"\'",
+					"\0",
+					"\"",
+				},
+			};
+
+			//Replace escape sequences
+			for (int i = 0; i < ESCAPE_SEQUENCE_LEN; i++) {
+				char *dec2 = dec + 1;
+				while((dec2 = strstr(dec2, escape_sequences[0][i])) != NULL) {
+					memmove(dec2, dec2 + 1, strlen(dec2));
+					*dec = *escape_sequences[1][i];
+				}
+			}
+
+			entry->local.valuep.string = dec + 1;
+		} else if (strspn(dec, "-." ID_NUMBER) == strlen(dec)) {
+			;;
 		} else {
-			if ((token = strtok(NULL, "")) == NULL)
-				ERROR_LINE(ERROR_EXPECTED_TOKEN, "Expected token", cline - line)
-			
-			
-			entry->declaration.value = token;
-			//entry->declaration.token_count = 1;
+			ERROR_LINE(ERROR_PARSE_ERROR, "Invalid value for local", cline - line)
 		}
-		//Implement token storing
+		
 	}
 
 
@@ -384,6 +399,10 @@ int main(int argc, char *argv[]) {
 		}
 
 		line[line_len].section = NO_SECTION;
+
+		if (has_section[1] == 0) {
+			ERROR(ERROR_PARSE_ERROR, "No text section")
+		}
 	}
 
 	name_list.name = malloc(sizeof(struct asm_name_entry) * 16);
@@ -406,62 +425,9 @@ int main(int argc, char *argv[]) {
 			}
 			lsection = lsection->next_section;
 		}
-		/*
-		for (long int i = 0; i < name_list.length; i++) {
-			if (name_list.name[i].declaration.value != NULL) {
-				char *dec = name_list.name[i].declaration.value;
-				if (*dec == '\"') {
-					#define ESCAPE_SEQUENCE_LEN 13
-					static const char *escape_sequences[2][ESCAPE_SEQUENCE_LEN] = {
-						{
-							"\\\\"
-							"\\\'",
-							"\\\"",
-							"\\\?"
-							"\\a",
-							"\\b",
-							"\\e",
-							"\\f",
-							"\\n",
-							"\\r",
-							"\\t",
-							"\\v",
-							"\\0"
-						},
-						{
-							"\\",
-							"\'",
-							"\"",
-							"\?",
-							"\a",
-							"\b",
-							"\e",
-							"\f",
-							"\n",
-							"\r",
-							"\t",
-							"\v",
-							"\0"
-						},
-					};
-
-					for (int i = 0; i < ESCAPE_SEQUENCE_LEN; i++) {
-						char *dec2 = dec + 1;
-						while((dec2 = strstr(dec2, escape_sequences[0][i])) != NULL) {
-							memmove(dec2, dec2 + 1, strlen(dec2));
-							*dec = *escape_sequences[1][i];
-						}
-					}
-					
-					char *dec2 = dec + 1;
-					strchr(dec2, '\"')
-				}
-			}
-		}
-		*/
 	}
 
-	printf("%s: %d %s\n", name_list.name[0].name, name_list.name[0].macro.token_count, name_list.name[0].macro.value);
+	//printf("%s: %d %s\n", name_list.name[0].name, name_list.name[0].macro.token_count, name_list.name[0].macro.value);
 	for (long int i = 0; i < line_len; i++) {
 		printf("I:%.4li R:%.4li L:%.4li %d : \"%s\"\t\t\t\"%s\" \n", i, line[i].line, (long int) line[i].length, line[i].section, line[i].p, line[i].rp);
 	}
@@ -472,7 +438,7 @@ int main(int argc, char *argv[]) {
 	if (error_code != 0) {
 		fprintf(stderr, "%s", error_message);
 		if (error_line >= 0) {
-			char lbuf[17] = {0};
+			//char lbuf[17] = {0};
 
 
 			size_t len = strlen(line[error_line].rp);
