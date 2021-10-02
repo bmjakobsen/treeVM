@@ -43,7 +43,7 @@ OPCODE_START(VM_OPCODE_VINT) {
 	//Call interrupt
 	if (vmx_interrupt(VM_INSTRUCTION_GET(INTID))) {
 		//Get jump address and jump
-		vm_instruction_t *tj = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(union vm_dpc_address));
+		vm_instruction_t *tj = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(vm_dpc_address_t));
 		if (tj == NULL) {
 			VM_PANIC(VM_ERROR_INVALID_JUMP_ADDRESS);
 		}
@@ -412,7 +412,7 @@ OPCODE_START(VM_OPCODE_POP) {
 
 OPCODE_START(VM_OPCODE_JMP) {
 	//Get label and jump
-	vm_instruction_t *nip = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(union vm_dpc_address));
+	vm_instruction_t *nip = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(vm_dpc_address_t));
 	if (nip == NULL) {
 		VM_PANIC(VM_ERROR_INVALID_JUMP_ADDRESS);
 	}
@@ -439,7 +439,7 @@ OPCODE_START(VM_OPCODE_JTAB) {
 	}
 	
 	//Get label
-	vm_instruction_t *nip = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(union vm_dpc_address));
+	vm_instruction_t *nip = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(vm_dpc_address_t));
 	if (nip == NULL) {
 		VM_PANIC(VM_ERROR_INVALID_JUMP_ADDRESS);
 	}
@@ -462,7 +462,7 @@ OPCODE_START(VM_OPCODE_JNEG) {
 	
 	if (subtree->child[VM_INSTRUCTION_GET(NODE)].value.number < 0.0) {
 		//Get label and jump
-		vm_instruction_t *nip = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(union vm_dpc_address));
+		vm_instruction_t *nip = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(vm_dpc_address_t));
 		if (nip == NULL) {
 			VM_PANIC(VM_ERROR_INVALID_JUMP_ADDRESS);
 		}
@@ -484,7 +484,7 @@ OPCODE_START(VM_OPCODE_JZR) {
 	
 	if (subtree->child[VM_INSTRUCTION_GET(NODE)].value.number == 0.0) {
 		//Get label and jump
-		vm_instruction_t *nip = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(union vm_dpc_address));
+		vm_instruction_t *nip = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(vm_dpc_address_t));
 		if (nip == NULL) {
 			VM_PANIC(VM_ERROR_INVALID_JUMP_ADDRESS);
 		}
@@ -506,7 +506,7 @@ OPCODE_START(VM_OPCODE_JPOS) {
 	
 	if (subtree->child[VM_INSTRUCTION_GET(NODE)].value.number > 0.0) {
 		//Get label and jump
-		vm_instruction_t *nip = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(union vm_dpc_address));
+		vm_instruction_t *nip = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(vm_dpc_address_t));
 		if (nip == NULL) {
 			VM_PANIC(VM_ERROR_INVALID_JUMP_ADDRESS);
 		}
@@ -524,7 +524,7 @@ OPCODE_START(VM_OPCODE_JNUL) {
 	
 	if (subtree->child[VM_INSTRUCTION_GET(NODE)].type == VM_TYPE_NULL) {
 		//Get label and jump
-		vm_instruction_t *nip = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(union vm_dpc_address));
+		vm_instruction_t *nip = vm_get_label(VM_INSTRUCTION_GET(OPERANT)(vm_dpc_address_t));
 		if (nip == NULL) {
 			VM_PANIC(VM_ERROR_INVALID_JUMP_ADDRESS);
 		}
@@ -543,7 +543,6 @@ OPCODE_START(VM_OPCODE_CALL) {
 	
 	
 	uint32_t function;
-	union vm_dpc_address function2;
 	vm_instruction_t *nip;
 	vm_error_t call_error = 0;
 	uint32_t object_address2 = subtree->child[VM_INSTRUCTION_GET(NODE)].object_address;
@@ -617,8 +616,7 @@ OPCODE_START(VM_OPCODE_CALL) {
 			vm_opcode_local_call:
 			
 			//Get label by useing uint32 as dpc_address
-			function2.ld = function;
-			nip = vm_get_label(function2);
+			nip = vm_get_label(function);
 			
 			if (nip == NULL) {
 				VM_PANIC(VM_ERROR_INVALID_JUMP_ADDRESS);
@@ -798,7 +796,7 @@ OPCODE_START(VM_OPCODE_ADD) {
 		//64-bit literal
 		case(VM_TYPE_DOUBLE): {
 			//Get double by dpc_address
-			double *dv = (double*) vm_get_data(VM_INSTRUCTION_GET(OPERANT)(union vm_dpc_address));
+			double *dv = (double*) vm_get_data(VM_INSTRUCTION_GET(OPERANT)(vm_dpc_address_t));
 			if (dv == NULL) {
 				VM_PANIC(VM_ERROR_EXPECTED_NUMBER);
 			}
@@ -867,7 +865,7 @@ OPCODE_START(VM_OPCODE_SUB) {
 		//64-bit literal
 		case(VM_TYPE_DOUBLE): {
 			//Get double by dpc_address
-			double *dv = (double*) vm_get_data(VM_INSTRUCTION_GET(OPERANT)(union vm_dpc_address));
+			double *dv = (double*) vm_get_data(VM_INSTRUCTION_GET(OPERANT)(vm_dpc_address_t));
 			if (dv == NULL) {
 				VM_PANIC(VM_ERROR_EXPECTED_NUMBER);
 			}
@@ -936,7 +934,7 @@ OPCODE_START(VM_OPCODE_MUL) {
 		//64-bit literal
 		case(VM_TYPE_DOUBLE): {
 			//Get double by dpc_address
-			double *dv = (double*) vm_get_data(VM_INSTRUCTION_GET(OPERANT)(union vm_dpc_address));
+			double *dv = (double*) vm_get_data(VM_INSTRUCTION_GET(OPERANT)(vm_dpc_address_t));
 			if (dv == NULL) {
 				VM_PANIC(VM_ERROR_EXPECTED_NUMBER);
 			}
@@ -1005,7 +1003,7 @@ OPCODE_START(VM_OPCODE_DIV) {
 		//64-bit literal
 		case(VM_TYPE_DOUBLE): {
 			//Get double by dpc_address
-			double *dv = (double*) vm_get_data(VM_INSTRUCTION_GET(OPERANT)(union vm_dpc_address));
+			double *dv = (double*) vm_get_data(VM_INSTRUCTION_GET(OPERANT)(vm_dpc_address_t));
 			if (dv == NULL) {
 				VM_PANIC(VM_ERROR_EXPECTED_NUMBER);
 			}
@@ -1077,7 +1075,7 @@ OPCODE_START(VM_OPCODE_MOD) {
 		//64-bit literal
 		case(VM_TYPE_DOUBLE): {
 			//Get double by dpc_address
-			double *dv = (double*) vm_get_data(VM_INSTRUCTION_GET(OPERANT)(union vm_dpc_address));
+			double *dv = (double*) vm_get_data(VM_INSTRUCTION_GET(OPERANT)(vm_dpc_address_t));
 			if (dv == NULL) {
 				VM_PANIC(VM_ERROR_EXPECTED_NUMBER);
 			}

@@ -178,10 +178,7 @@ enum vm_node_type {
 
 
 /* Types */
-typedef union vm_dpc_address {
-	uint32_t ld;
-	uint16_t it[2];
-} vm_dpc_address_t;
+typedef uint32_t vm_dpc_address_t;
 
 
 typedef uint64_t vm_instruction_t;

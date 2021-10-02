@@ -6,12 +6,9 @@
 ## Program & Data
 ### dpc-address
 The dpc-address is used to get labels and literals in the program/data areas.
-It is defined as a union type,
+It is defined as unsigned 32-Bit number
 ```c
-typedef union vm_dpc_address {
-    uint32_t ld;        //Use for addressing with a loader
-    uint16_t it[2];     //Use for addressing with a interpreter
-} vm_dpc_address_t
+typedef uint32_t vm_dpc_address_t
 ```
 
 ### Loaders
@@ -19,9 +16,10 @@ The program and data area are both organized as an up to (2³² - 1) elements bi
 the VM expects that it doesnt change during runtime
 
 ### Interpreters
-The program and data area are both organized as an up to (2¹⁶ - 1) chunks, each with a size of up to (2¹⁶ - 1) elements
+The program and data area are both organized as an up to (2¹⁶ - 1) chunks, each with a size of up to (2¹⁶ - 1) elements,
+the address is split up into a chunk index by division and into an offset by modulus,
 the vm expects that the individual chunks dont change, when reallocating the array of chunks the interpreter should lock the areas,
-the vm uses the vmx_interpreter_lock and vmx_interpreter_lock unlock functions for synchronization.
+the vm uses the vmx_interpreter_lock and vmx_interpreter_unlock functions for synchronization.
 
 
 

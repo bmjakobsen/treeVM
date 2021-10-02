@@ -7,43 +7,47 @@
 	
 	
 	
-	static inline vm_data_unit_t *vm_get_data(union vm_dpc_address address);
-	static inline vm_instruction_t *vm_get_label(union vm_dpc_address address);
+	static inline vm_data_unit_t *vm_get_data(vm_dpc_address_t address);
+	static inline vm_instruction_t *vm_get_label(vm_dpc_address_t address);
 	
 	
 	#ifdef VM_INTERPRETER
-		static inline vm_data_unit_t *vm_get_data(union vm_dpc_address address) {
+		static inline vm_data_unit_t *vm_get_data(vm_dpc_address_t address2) {
 			vmx_interpreter_lock();
 			
+			uint16_t chunk = address2/0xFFFF;
+			uint16_t address = address2%0xFFFF;
 			
-			if (address.it[0] >= vmx_core.it.data_len) {
+			if (chunk >= vmx_core.it.data_len) {
 				vmx_interpreter_unlock();
 				return(NULL);
 			}
-			if (address.it[0] >= vmx_core.it.data[address.it[0]].len) {
+			if (address >= vmx_core.it.data[chunk].len) {
 				vmx_interpreter_unlock();
 				return(NULL);
 			}
-			vm_data_unit_t *t = &vmx_core.it.data[address.it[0]].p[address.it[1]];
+			vm_data_unit_t *t = &vmx_core.it.data[chunk].p[address];
 			
 			
 			vmx_interpreter_unlock();
 			
 			return(t);
 		}
-		static inline vm_instruction_t *vm_get_label(union vm_dpc_address address) {
+		static inline vm_instruction_t *vm_get_label(vm_dpc_address_t address2) {
 			vmx_interpreter_lock();
 			
+			uint16_t chunk = address2/0xFFFF;
+			uint16_t address = address2%0xFFFF;
 			
-			if (address.it[0] >= vmx_core.it.program_len) {
+			if (chunk >= vmx_core.it.program_len) {
 				vmx_interpreter_unlock();
 				return(NULL);
 			}
-			if (address.it[0] >= vmx_core.it.program[address.it[0]].len) {
+			if (address >= vmx_core.it.program[chunk].len) {
 				vmx_interpreter_unlock();
 				return(NULL);
 			}
-			vm_instruction_t *t = (vm_instruction_t *) &vmx_core.it.program[address.it[0]].p[address.it[1]];
+			vm_instruction_t *t = &vmx_core.it.program[chunk].p[address];
 			
 			
 			vmx_interpreter_unlock();
@@ -51,19 +55,19 @@
 			return(t);
 		}
 	#else
-		static inline vm_data_unit_t *vm_get_data(union vm_dpc_address address) {
-			if (address.ld >= vmx_core.ld.data_len) {
+		static inline vm_data_unit_t *vm_get_data(vm_dpc_address_t address2) {
+			if (address2 >= vmx_core.ld.data_len) {
 				return(NULL);
 			}
 			
-			return(&vmx_core.ld.data[address.ld]);
+			return(&vmx_core.ld.data[address2]);
 		}
-		static inline vm_instruction_t *vm_get_label(union vm_dpc_address address) {
-			if (address.ld >= vmx_core.ld.program_len) {
+		static inline vm_instruction_t *vm_get_label(vm_dpc_address_t address2) {
+			if (address2 >= vmx_core.ld.program_len) {
 				return(NULL);
 			}
 			
-			return((vm_instruction_t *) &vmx_core.ld.program[address.ld]);
+			return((vm_instruction_t *) &vmx_core.ld.program[address2]);
 		}
 	#endif
 	
@@ -235,11 +239,11 @@
 				node->type = VM_TYPE_NUMBER;
 				break;
 			case(VM_TYPE_DOUBLE):
-				node->value.number = *(double*) vm_get_data(*(union vm_dpc_address*) arg);
+				node->value.number = *(double*) vm_get_data(*(vm_dpc_address_t*) arg);
 				node->type = VM_TYPE_NUMBER;
 				break;
 			case(VM_TYPE_STRING):
-				lstring = (vm_string_t*) vm_get_data(*(union vm_dpc_address*) arg);
+				lstring = (vm_string_t*) vm_get_data(*(vm_dpc_address_t*) arg);
 				lstring->len = (uint32_t) strnlen(lstring->c, lstring->len);
 				for(lstring->size = 1; lstring->size < lstring->len; lstring->size *= 2);
 				
@@ -333,7 +337,7 @@
 
 				break;
 			case(VM_TYPE_BYTECODE_FUNCTION):
-				if (vm_get_label(*(union vm_dpc_address*) arg) == NULL) {
+				if (vm_get_label(*(vm_dpc_address_t*) arg) == NULL) {
 					return(VM_ERROR_INVALID_JUMP_ADDRESS);
 				}
 				node->value.function = *arg;
