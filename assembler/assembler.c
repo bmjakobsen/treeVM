@@ -155,7 +155,6 @@ int parse_data(aline_t *line2) {
 		name_list.name[name_list.length].name = identifier;
 
 		entry->local.value = NULL;
-		printf("1");
 		name_list.length++;
 
 		if ((token = strtok(NULL, "")) == NULL)
@@ -165,12 +164,12 @@ int parse_data(aline_t *line2) {
 		entry->local.value = token;
 
 		if (*entry->local.value == '\"') {
-			#define ESCAPE_SEQUENCE_LEN 13
+			#define ESCAPE_SEQUENCE_LEN 12
 			static const char *escape_sequences[2][ESCAPE_SEQUENCE_LEN] = {
 				{
 					"\\\\",
 					"\\\"",
-					"\"",			//Special case, replace first unescaped " with NULL terminator
+					"\\\'",
 					"\\\?",
 					"\\a",
 					"\\b",
@@ -180,12 +179,11 @@ int parse_data(aline_t *line2) {
 					"\\r",
 					"\\t",
 					"\\v",
-					"\\\'",
 				},
 				{
 					"\\",
 					"\"",
-					"\0",
+					"\'",
 					"\?",
 					"\a",
 					"\b",
@@ -195,24 +193,44 @@ int parse_data(aline_t *line2) {
 					"\r",
 					"\t",
 					"\v",
-					"\'",
 				},
 			};
 
 			//Replace escape sequences
+			
+			char *end = entry->local.value + 1;
+			{	//Find the end of the string, and set to \0
+				int end_found = 0;
+				while ( (end = strchr(end, '\"')) != NULL ) {
+					int escapes = 0;
+					for (int i = 1; end[-i] == '\\'; i++, escapes++);
+
+					if (escapes % 2 == 0) {
+						end_found = 1;
+						break;
+					}
+					end++;
+				}
+				if (end_found == 0) {
+					ERROR_LINE(ERROR_PARSE_ERROR, "Unterminated string", cline - line);
+				}
+				*end = '\0';
+			}
+
+			//Find and replace escape sequences
 			for (int i = 0; i < ESCAPE_SEQUENCE_LEN; i++) {
-				char *dec2 = entry->local.value + 1;
+				char *dec = entry->local.value + 1;
 				
-				while( (dec2 = strstr(dec2, escape_sequences[0][i])) != NULL) {
-					memmove(dec2, dec2 + 1, strlen(dec2));
-					*dec2 = *escape_sequences[1][i];
+				while( (dec = strstr(dec, escape_sequences[0][i])) != NULL && dec < end) {
+					memmove(dec, dec + 1, strlen(dec));
+					*dec = *escape_sequences[1][i];
+					dec++;
 				}
 			}
 			
 			entry->local.type = TYPE_STRING;
 			entry->local.valuep.string = entry->local.value + 1;
 		} else if (strspn(entry->local.value, "-." ID_NUMBER) == strlen(entry->local.value)) {
-			printf("2");
 			size_t declen = strlen(entry->local.value);
 			int dots = 0;
 			
@@ -237,7 +255,6 @@ int parse_data(aline_t *line2) {
 			entry->local.type = TYPE_NUMBER;
 			sscanf(entry->local.value, "%lf", &entry->local.valuep.number);
 		} else {
-			printf("2");
 			ERROR_LINE(ERROR_PARSE_ERROR, "Invalid value for local", cline - line)
 		}
 		
