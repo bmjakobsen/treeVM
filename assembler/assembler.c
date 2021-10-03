@@ -22,7 +22,7 @@ enum asm_declaration {
 	TYPE_NONE = 0,
 	TYPE_LOCAL = 2, 
 	TYPE_LABEL = 4,
-	TYPE_DOUBLE = 6,
+	TYPE_NUMBER = 6,
 	TYPE_STRING = 7,
 };
 
@@ -136,7 +136,6 @@ int parse_data(aline_t *line2) {
 			ERROR_LINE(ERROR_PARSE_ERROR, "Invalid identifier", cline - line)
 		}
 
-		
 		for (long int i = 0; i < name_list.length; i++) {
 			if (strcmp(identifier, name_list.name[i].name) == 0) {
 				ERROR_LINE(ERROR_PARSE_ERROR, "Duplicate local declaration", cline - line)
@@ -156,7 +155,7 @@ int parse_data(aline_t *line2) {
 		name_list.name[name_list.length].name = identifier;
 
 		entry->local.value = NULL;
-
+		printf("1");
 		name_list.length++;
 
 		if ((token = strtok(NULL, "")) == NULL)
@@ -165,12 +164,13 @@ int parse_data(aline_t *line2) {
 		
 		entry->local.value = token;
 
-		char *dec = entry->local.value;
-		if (*dec == '\"') {
+		if (*entry->local.value == '\"') {
 			#define ESCAPE_SEQUENCE_LEN 13
 			static const char *escape_sequences[2][ESCAPE_SEQUENCE_LEN] = {
 				{
 					"\\\\",
+					"\\\"",
+					"\"",			//Special case, replace first unescaped " with NULL terminator
 					"\\\?",
 					"\\a",
 					"\\b",
@@ -181,11 +181,11 @@ int parse_data(aline_t *line2) {
 					"\\t",
 					"\\v",
 					"\\\'",
-					"\""			//Special case, replace first unescaped " with NULL terminator
-					"\\\"",
 				},
 				{
 					"\\",
+					"\"",
+					"\0",
 					"\?",
 					"\a",
 					"\b",
@@ -196,24 +196,48 @@ int parse_data(aline_t *line2) {
 					"\t",
 					"\v",
 					"\'",
-					"\0",
-					"\"",
 				},
 			};
 
 			//Replace escape sequences
 			for (int i = 0; i < ESCAPE_SEQUENCE_LEN; i++) {
-				char *dec2 = dec + 1;
-				while((dec2 = strstr(dec2, escape_sequences[0][i])) != NULL) {
+				char *dec2 = entry->local.value + 1;
+				
+				while( (dec2 = strstr(dec2, escape_sequences[0][i])) != NULL) {
 					memmove(dec2, dec2 + 1, strlen(dec2));
-					*dec = *escape_sequences[1][i];
+					*dec2 = *escape_sequences[1][i];
+				}
+			}
+			
+			entry->local.type = TYPE_STRING;
+			entry->local.valuep.string = entry->local.value + 1;
+		} else if (strspn(entry->local.value, "-." ID_NUMBER) == strlen(entry->local.value)) {
+			printf("2");
+			size_t declen = strlen(entry->local.value);
+			int dots = 0;
+			
+			for (size_t i = 0; i < declen; i++) {
+				if (i == 0) {
+					if (entry->local.value[i] == '-') {
+						continue;
+					}
+
+					if (entry->local.value[i] >= '0' && entry->local.value[i] <= '9') {
+						continue;
+					} else if (entry->local.value[i] == '.') {
+						if (dots == 0) {
+							dots++;
+						} else {
+							ERROR_LINE(ERROR_PARSE_ERROR, "Invalid Number", cline - line)
+						}
+					}
 				}
 			}
 
-			entry->local.valuep.string = dec + 1;
-		} else if (strspn(dec, "-." ID_NUMBER) == strlen(dec)) {
-			;;
+			entry->local.type = TYPE_NUMBER;
+			sscanf(entry->local.value, "%lf", &entry->local.valuep.number);
 		} else {
+			printf("2");
 			ERROR_LINE(ERROR_PARSE_ERROR, "Invalid value for local", cline - line)
 		}
 		
@@ -427,7 +451,8 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	//printf("%s: %d %s\n", name_list.name[0].name, name_list.name[0].macro.token_count, name_list.name[0].macro.value);
+	printf("%s: %f %s\n", name_list.name[0].name, name_list.name[0].local.valuep.number, name_list.name[0].local.value);
+	printf("%s: %s %s\n", name_list.name[1].name, name_list.name[1].local.valuep.string, name_list.name[1].local.value);
 	for (long int i = 0; i < line_len; i++) {
 		printf("I:%.4li R:%.4li L:%.4li %d : \"%s\"\t\t\t\"%s\" \n", i, line[i].line, (long int) line[i].length, line[i].section, line[i].p, line[i].rp);
 	}
