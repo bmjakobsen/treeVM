@@ -3,7 +3,8 @@
 ; Comment
 
 .data       ; Section
- define Test Test Test Tes    ;Test declaration
+ local Test 1.0    ;Test declaration
+  local Test2 "abc   n"
 
 .text       ; Section
   Test3
