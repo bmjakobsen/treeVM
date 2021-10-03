@@ -4,7 +4,7 @@
 
 .data       ; Section
  local Test 1.0    ;Test declaration
-  local Test2 "abc   n"
+  local Test2 "abc   \t-"
 
 .text       ; Section
   Test3
