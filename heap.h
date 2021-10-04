@@ -75,11 +75,6 @@ static vm_error_t vm_heap_init() {
 	if (vm_heap.node == NULL)
 		return(VM_ERROR_INIT_OUT_OF_MEMORY);
 	
-	vm_error_t error = 0;
-	if ((error = vmx_provide_heap_size(VM_LHAREA))) {
-		SFREE(vm_heap.node);
-		return(error);
-	}
 
 	vm_heap.size = VM_LHAREA;
 
@@ -120,8 +115,6 @@ static void vm_heap_destroy() {
 		vm_node_clear(&vm_heap.node[i].node, 0);
 	}
 
-	vmx_provide_heap_size(0);
-
 	
 	//Free nodes
 	SFREE(vm_heap.node);
@@ -142,11 +135,6 @@ static vm_error_t vm_heap_expand() {
 	void *new_ptr = SREALLOC(vm_heap.node, lsize2 * sizeof(struct vm_heap_node));
 	if (new_ptr == NULL) {
 		return(VM_ERROR_OUT_OF_MEMORY);
-	}
-
-	vm_error_t error = 0;
-	if ((error = vmx_provide_heap_size(lsize2))) {
-		return(error);
 	}
 
 	vm_heap.size = lsize2;
@@ -190,7 +178,6 @@ static void vm_heap_shrink() {
 		vm_heap.node = new_ptr;
 	}
 	
-	vmx_provide_heap_size(lsize);
 	vm_heap.size = lsize;
 	vm_heap.area_len--;
 }
