@@ -222,7 +222,6 @@ vm_error_t vm_call_node(const vm_instruction_t * const ip, vm_node_t * const roo
 }
 
 
-VM_USED
 vm_error_t vm_run_main(const vm_instruction_t * const restrict ip, vm_node_t * const restrict root) {
 	vm_error_t error;
 
@@ -255,8 +254,9 @@ vm_error_t vm_run_main(const vm_instruction_t * const restrict ip, vm_node_t * c
 
 
 
+VM_USED
 VM_NOINLINE
-int vm_get_build_information(volatile int no_print) {
+static int vm_get_build_information2(volatile int no_print) {
 	VM_USED
 	static volatile const char vm_build_information_string[] = 
 		"\x06               "
@@ -286,4 +286,9 @@ int vm_get_build_information(volatile int no_print) {
 
 
 	return(vm_build_information_string[0] != '\x06');
+}
+
+
+int vm_get_build_information(volatile int no_print) {
+	return(vm_get_build_information2(no_print));
 }

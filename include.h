@@ -273,7 +273,6 @@ extern void vmx_interpreter_unlock(void);
 
 extern int vmx_interrupt(uint16_t int_id);
 extern void vmx_return_cleanup(vm_node_t * node, vm_error_t error);
-extern vm_error_t vmx_provide_heap_size(uint32_t size);			//Gets called when the heap is resized to provide the new heap size for the loader
 
 extern vm_error_t (* const vmx_corelib[])(vm_node_t *);
 extern const uint32_t vmx_corelib_len;
