@@ -132,7 +132,7 @@ int parse_data(aline_t *line2) {
 		#define ID_ALPHABET  "abcdefghijklmnopqrstuvwxyz"
 		#define ID_ALPHABET2 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		#define ID_NUMBER "0123456789"
-		if ((*identifier >= '0' && *identifier <= 9) || strspn(identifier, ID_ALPHABET ID_ALPHABET2 ID_NUMBER "-_") < strlen(identifier)) {
+		if ((*identifier >= '0' && *identifier <= 9) || *identifier == '-' || *identifier == '.' || strspn(identifier, ID_ALPHABET ID_ALPHABET2 ID_NUMBER "-._") < strlen(identifier)) {
 			ERROR_LINE(ERROR_PARSE_ERROR, "Invalid identifier", cline - line)
 		}
 
