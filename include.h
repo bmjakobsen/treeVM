@@ -92,54 +92,54 @@ enum vm_opcode {
 	
 	
 	/* Misc: */
-	VM_OPCODE_EXIT = 64,		//exit		I 0 ...... X		Exit and return error, if F return value of node as error, else return value of 0
-	VM_OPCODE_VINT = 65,		//vint		I . 00 JJJJ X		Interrupt, jump to JJJJ if returns !0, given 0 will terminate
+	VM_OPCODE_EXIT = 64,
+	VM_OPCODE_VINT = 65
 		
-	VM_OPCODE_NEW = 66,			//new		I N ...... X		Create object
-	VM_OPCODE_FREE = 67,		//free		I N ...... X		Free object
+	VM_OPCODE_NEW = 66,
+	VM_OPCODE_FREE = 67,
 	
 	VM_OPCODE_OPEN = 68,
 	VM_OPCODE_CLOSE = 69,
 		
-	VM_OPCODE_SLEN = 70,		//slen		I N N ..... X		Get string length
-	VM_OPCODE_PUSH = 71,		//ains		I N . T DDDD X		Insert a node into a subtree
+	VM_OPCODE_SLEN = 70,
+	VM_OPCODE_PUSH = 71,
 	
 	
 	/* Node: */
-	VM_OPCODE_INS = 72,			//ins		I . O T DDDD X	Create new node
-	VM_OPCODE_SET = 73,			//set		I N O T DDDD X	Set node to value
-	VM_OPCODE_REM = 74,			//rem		I ....... X		Remove a node
-	VM_OPCODE_CLEAR = 75,		//clear		I N ...... X	Clear children
+	VM_OPCODE_INS = 72,
+	VM_OPCODE_SET = 73,
+	VM_OPCODE_REM = 74,
+	VM_OPCODE_CLEAR = 75,
 	
-	VM_OPCODE_LEN = 76,			//len		I N ...... X	Get length of current subtree
+	VM_OPCODE_LEN = 76,
 	
-	VM_OPCODE_ENTER = 77,		//enter		I N ...... X		Enter a subtree, count the number if insert instruction after enter and allocate a fitting number of nodes
-	VM_OPCODE_LEAVE = 78,		//leave		I ....... X			Leave a subtree
+	VM_OPCODE_ENTER = 77,
+	VM_OPCODE_LEAVE = 78,
 	
-	VM_OPCODE_POP = 79,		//arem		I N N ..... X		Remove last element
+	VM_OPCODE_POP = 79,
 
 	
 	/* Branching: */
-	VM_OPCODE_JMP = 80,			//jmp		I ... JJJJ X	Jump
-	VM_OPCODE_JTAB = 81,		//jtab		I N 00 JJJJ X		Jump table, if higher than 00 skip instruction
+	VM_OPCODE_JMP = 80,
+	VM_OPCODE_JTAB = 81,
 		
-	VM_OPCODE_JNEG = 82,		//jneg		I N .. JJJJ X		Jump if node is negative
-	VM_OPCODE_JZR = 83,			//jzr		I N .. JJJJ X	Jump if node is zero
-	VM_OPCODE_JPOS = 84,		//jpos		I N .. JJJJ X		Jump if node is positive
-	VM_OPCODE_JNUL = 85,		//jnul		I N .. JJJJ X		Jump if node is null
+	VM_OPCODE_JNEG = 82,
+	VM_OPCODE_JZR = 83,
+	VM_OPCODE_JPOS = 84,
+	VM_OPCODE_JNUL = 85,
 		
-	VM_OPCODE_CALL = 86,		//call		I N . T DDDD X		Call a function on the node to address
-	VM_OPCODE_RETURN = 87,		//return	I N ...... X		Return a node	
+	VM_OPCODE_CALL = 86,
+	VM_OPCODE_RETURN = 87,
 	
 	/* Math: */
-	VM_OPCODE_ADD = 88,			//add		I N . T DDDD X	Add
-	VM_OPCODE_SUB = 89,			//sub		I N . T DDDD X	Subtract
-	VM_OPCODE_MUL = 90,			//mul		I N . T DDDD X	Multiply
-	VM_OPCODE_DIV = 91,			//div		I N . T DDDD X	Division
-	VM_OPCODE_MOD = 92,			//mod		I N . T DDDD X	Modulus
-	VM_OPCODE_NEG = 93,			//neg		I N ...... X	Negate
-	VM_OPCODE_FLOOR = 94,		//down		I N ...... X		Round to last full number down
-	VM_OPCODE_CEIL = 95,		//ceil		I N ...... X		Round to last full number up
+	VM_OPCODE_ADD = 88,
+	VM_OPCODE_SUB = 89,
+	VM_OPCODE_MUL = 90,
+	VM_OPCODE_DIV = 91,
+	VM_OPCODE_MOD = 92,
+	VM_OPCODE_NEG = 93,
+	VM_OPCODE_FLOOR = 94,
+	VM_OPCODE_CEIL = 95,
 };
 
 
