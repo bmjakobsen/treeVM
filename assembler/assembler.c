@@ -11,6 +11,15 @@ This assembler is Work In Progress
 
 
 
+/* Prefixes
+	%			Node
+	#			Short number, not for data
+	$			Data
+	"			String
+*/
+
+
+
 
 enum asm_sections {
 	NO_SECTION = 0,
@@ -106,7 +115,11 @@ static aline_t *line = NULL;
 static long int line_len = 0;
 static struct asm_name_list name_list = { .name = NULL, };
 
-
+struct instruction_table_field {
+	char name[8];
+	uint8_t index;
+	uint8_t sem[6];		//Semantics (Argument types)
+};
 
 #define ERROR(code, msg) { error_code = code; error_message = msg "\n"; return(code); }
 #define ERROR_LINE(code, msg, line) { error_code = code; error_message = msg "\n"; error_line = line; return(code); }
@@ -263,7 +276,61 @@ int parse_data(aline_t *line2) {
 
 	return(0);
 }
-int parse_text(aline_t *line) {
+
+
+enum instruction_argument {
+	INSTRUCTION_ARGUMENT_NODE = 1,
+	INSTRUCTION_ARGUMENT_INT8 = 2,
+	INSTRUCTION_ARGUMENT_INT16 = 3,
+	INSTRUCTION_ARGUMENT_TYPE = 4,
+	INSTRUCTION_ARGUMENT_LABEL = 5,
+	INSTRUCTION_ARGUMENT_DATA = 6,
+};
+
+
+int parse_text(aline_t *line2) {
+	static const struct instruction_table_field instruction_table[32] = {
+		{ .name = "exit", .index = 64, .sem = {INSTRUCTION_ARGUMENT_INT8, 0} },
+		{ .name = "vint", .index = 65, .sem = {INSTRUCTION_ARGUMENT_INT16, INSTRUCTION_ARGUMENT_LABEL, 0} },
+		{ .name = "new", .index = 66, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "free", .index = 67, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "open", .index = 68, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "close", .index = 69, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "slen", .index = 70, .sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "push", .index = 71, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+
+		{ .name = "ins", .index = 72, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "set", .index = 73, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "rem", .index = 74, .sem = {} },
+		{ .name = "clear", .index = 75, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "len", .index = 76, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "enter", .index = 77, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "leave", .index = 78, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "pop", .index = 79, .sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_NODE, 0} },
+
+		{ .name = "jmp", .index = 80, .sem = {INSTRUCTION_ARGUMENT_LABEL, 0} },
+		{ .name = "jtab", .index = 81, .sem = {INSTRUCTION_ARGUMENT_INT8, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
+		{ .name = "jneg", .index = 82, .sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
+		{ .name = "jzr", .index = 83, .sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
+		{ .name = "jpos", .index = 84, .sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
+		{ .name = "jnul", .index = 85, .sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
+		{ .name = "call", .index = 86, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "return", .index = 87, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+
+		{ .name = "add", .index = 88, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "sub", .index = 89, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "mul", .index = 90, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "div", .index = 91, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "mod", .index = 92, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "neg", .index = 93, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "floor", .index = 94, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "ceil", .index = 95, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+	};
+
+	for (aline_t *cline = line2; cline->section == TEXT_SECTION; cline++) {
+
+	}
+
 	return(1);
 }
 
