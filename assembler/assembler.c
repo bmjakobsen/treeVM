@@ -15,7 +15,6 @@ This assembler is Work In Progress
 	%			Node
 	#			Short number, not for data
 	$			Data
-	"			String
 */
 
 
@@ -53,6 +52,8 @@ struct asm_name_list {
 		struct asm_name_entry2 {
 			char *value;
 			enum asm_declaration type;
+			uint32_t address;
+			uint32_t size;
 			union asm_name_declaration_entry_value {
 				double number;
 				char *string;
@@ -115,14 +116,66 @@ static aline_t *line = NULL;
 static long int line_len = 0;
 static struct asm_name_list name_list = { .name = NULL, };
 
+static uint32_t data_size = 0;
+static uint32_t text_size = 0;
+
+
+
 struct instruction_table_field {
 	char name[8];
 	uint8_t index;
-	uint8_t sem[6];		//Semantics (Argument types)
+
+	int argc;			//Number of arguments
+	uint8_t sem[4];		//Argument order of instruction
+	uint8_t isem[3];	//Argument order of assembler
 };
 
 #define ERROR(code, msg) { error_code = code; error_message = msg "\n"; return(code); }
-#define ERROR_LINE(code, msg, line) { error_code = code; error_message = msg "\n"; error_line = line; return(code); }
+#define ERROR_LINE(code, msg, line) ERROR_LINE2(code, msg "\n", line)
+#define ERROR_LINE2(code, msg, line) { error_code = code; error_message = msg; error_line = line; return(code); }
+
+
+static int insertion_error = 0;
+static char *insertion_error_msg = NULL;
+struct asm_name_entry *insert_name(char *identifier) {
+	//Check if identifier is valid
+	#define ID_ALPHABET  "abcdefghijklmnopqrstuvwxyz"
+	#define ID_ALPHABET2 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	#define ID_NUMBER "0123456789"
+	if ((*identifier >= '0' && *identifier <= 9) || *identifier == '-' || *identifier == '.' || strspn(identifier, ID_ALPHABET ID_ALPHABET2 ID_NUMBER "-._") < strlen(identifier)) {
+		insertion_error = ERROR_PARSE_ERROR;
+		insertion_error_msg = "Invalid identifier\n";
+		return(NULL);
+	}
+
+	for (long int i = 0; i < name_list.length; i++) {
+		if (strcmp(identifier, name_list.name[i].name) == 0) {
+			insertion_error = ERROR_PARSE_ERROR;
+			insertion_error_msg = "Duplicate local declaration\n";
+			return(NULL);
+		}
+	}
+
+	if (name_list.length >= name_list.size) {
+		void *t = realloc(name_list.name, sizeof(struct asm_name_entry) * name_list.size * 2);
+		if (t == NULL) {
+			insertion_error = ERROR_OUT_OF_MEMORY;
+			insertion_error_msg = "Out of Memory\n";
+			return(NULL);
+		}
+		name_list.name = t;
+		name_list.size *= 2;
+	}
+
+	struct asm_name_entry *entry = &name_list.name[name_list.length];
+	name_list.name[name_list.length].name = identifier;
+
+	entry->local.value = NULL;
+	name_list.length++;
+
+	return(entry);
+}
+
 
 
 int parse_data(aline_t *line2) {
@@ -139,36 +192,11 @@ int parse_data(aline_t *line2) {
 		if ((token = strtok(NULL, " \t")) == NULL)
 			ERROR_LINE(ERROR_EXPECTED_TOKEN, "Expected token", cline - line)
 		
-		char *identifier = token;
-		
-		//Check if identifier is valid
-		#define ID_ALPHABET  "abcdefghijklmnopqrstuvwxyz"
-		#define ID_ALPHABET2 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-		#define ID_NUMBER "0123456789"
-		if ((*identifier >= '0' && *identifier <= 9) || *identifier == '-' || *identifier == '.' || strspn(identifier, ID_ALPHABET ID_ALPHABET2 ID_NUMBER "-._") < strlen(identifier)) {
-			ERROR_LINE(ERROR_PARSE_ERROR, "Invalid identifier", cline - line)
+		struct asm_name_entry *entry = insert_name(token);
+		if (entry == NULL) {
+			ERROR_LINE2(insertion_error, insertion_error_msg, cline - line)
 		}
 
-		for (long int i = 0; i < name_list.length; i++) {
-			if (strcmp(identifier, name_list.name[i].name) == 0) {
-				ERROR_LINE(ERROR_PARSE_ERROR, "Duplicate local declaration", cline - line)
-			}
-		}
-
-		if (name_list.length >= name_list.size) {
-			void *t = realloc(name_list.name, sizeof(struct asm_name_entry) * name_list.size * 2);
-			if (t == NULL) {
-				ERROR_LINE(ERROR_OUT_OF_MEMORY, "Out of Memory", cline - line)
-			}
-			name_list.name = t;
-			name_list.size *= 2;
-		}
-
-		struct asm_name_entry *entry = &name_list.name[name_list.length];
-		name_list.name[name_list.length].name = identifier;
-
-		entry->local.value = NULL;
-		name_list.length++;
 
 		if ((token = strtok(NULL, "")) == NULL)
 			ERROR_LINE(ERROR_EXPECTED_TOKEN, "Expected token", cline - line)
@@ -243,6 +271,7 @@ int parse_data(aline_t *line2) {
 			
 			entry->local.type = TYPE_STRING;
 			entry->local.valuep.string = entry->local.value + 1;
+			entry->local.size = (strlen(entry->local.valuep.string) / 8) + ((strlen(entry->local.valuep.string) + 1 % 8) ? 1 : 0);
 		} else if (strspn(entry->local.value, "-." ID_NUMBER) == strlen(entry->local.value)) {
 			size_t declen = strlen(entry->local.value);
 			int dots = 0;
@@ -266,11 +295,14 @@ int parse_data(aline_t *line2) {
 			}
 
 			entry->local.type = TYPE_NUMBER;
+			entry->local.size = 1;
 			sscanf(entry->local.value, "%lf", &entry->local.valuep.number);
 		} else {
 			ERROR_LINE(ERROR_PARSE_ERROR, "Invalid value for local", cline - line)
 		}
 		
+		entry->local.address = data_size;
+		data_size += entry->local.size;
 	}
 
 
@@ -290,41 +322,41 @@ enum instruction_argument {
 
 int parse_text(aline_t *line2) {
 	static const struct instruction_table_field instruction_table[32] = {
-		{ .name = "exit", .index = 64, .sem = {INSTRUCTION_ARGUMENT_INT8, 0} },
-		{ .name = "vint", .index = 65, .sem = {INSTRUCTION_ARGUMENT_INT16, INSTRUCTION_ARGUMENT_LABEL, 0} },
-		{ .name = "new", .index = 66, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
-		{ .name = "free", .index = 67, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
-		{ .name = "open", .index = 68, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
-		{ .name = "close", .index = 69, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
-		{ .name = "slen", .index = 70, .sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_NODE, 0} },
-		{ .name = "push", .index = 71, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "exit",	.index = 64,	.argc = 1,	.isem = {0, 1, 1},	.sem = {INSTRUCTION_ARGUMENT_INT8, 0} },
+		{ .name = "vint",	.index = 65,	.argc = 2,	.isem = {0, 1, 2},	.sem = {INSTRUCTION_ARGUMENT_INT16, INSTRUCTION_ARGUMENT_LABEL, 0} },
+		{ .name = "new",	.index = 66,	.argc = 1,	.isem = {0, 1, 1},	.sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "free",	.index = 67,	.argc = 1,	.isem = {0, 1, 1},	.sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "open",	.index = 68,	.argc = 1,	.isem = {0, 1, 1},	.sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "close",	.index = 69,	.argc = 1,	.isem = {0, 1, 1},	.sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "slen",	.index = 70,	.argc = 2,	.isem = {0, 1, 2},	.sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "push",	.index = 71,	.argc = 3,	.isem = {1, 0, 2},	.sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
 
-		{ .name = "ins", .index = 72, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_DATA, 0} },
-		{ .name = "set", .index = 73, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
-		{ .name = "rem", .index = 74, .sem = {} },
-		{ .name = "clear", .index = 75, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
-		{ .name = "len", .index = 76, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
-		{ .name = "enter", .index = 77, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
-		{ .name = "leave", .index = 78, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
-		{ .name = "pop", .index = 79, .sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "ins",	.index = 72,	.argc = 2,	.isem = {0, 1, 2},	.sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "set",	.index = 73,	.argc = 3,	.isem = {1, 0, 2},	.sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "rem",	.index = 74,	.argc = 0,	.isem = {0, 0, 0},	.sem = {0} },
+		{ .name = "clear",	.index = 75,	.argc = 1,	.isem = {0, 1, 1},	.sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "len",	.index = 76,	.argc = 1,	.isem = {0, 1, 1},	.sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "enter",	.index = 77,	.argc = 1,	.isem = {0, 1, 1},	.sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "leave",	.index = 78,	.argc = 1,	.isem = {0, 1, 1},	.sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "pop",	.index = 79, 	.argc = 2,	.isem = {0, 1, 2},	.sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_NODE, 0} },
 
-		{ .name = "jmp", .index = 80, .sem = {INSTRUCTION_ARGUMENT_LABEL, 0} },
-		{ .name = "jtab", .index = 81, .sem = {INSTRUCTION_ARGUMENT_INT8, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
-		{ .name = "jneg", .index = 82, .sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
-		{ .name = "jzr", .index = 83, .sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
-		{ .name = "jpos", .index = 84, .sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
-		{ .name = "jnul", .index = 85, .sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
-		{ .name = "call", .index = 86, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
-		{ .name = "return", .index = 87, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "jmp",	.index = 80,	.argc = 1,	.isem = {0, 1, 1},	.sem = {INSTRUCTION_ARGUMENT_LABEL, 0} },
+		{ .name = "jtab",	.index = 81,	.argc = 3,	.isem = {1, 0, 2},	.sem = {INSTRUCTION_ARGUMENT_INT8, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
+		{ .name = "jneg",	.index = 82,	.argc = 2,	.isem = {0, 1, 2},	.sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
+		{ .name = "jzr",	.index = 83,	.argc = 2,	.isem = {0, 1, 2},	.sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
+		{ .name = "jpos",	.index = 84,	.argc = 2,	.isem = {0, 1, 2},	.sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
+		{ .name = "jnul",	.index = 85,	.argc = 2,	.isem = {0, 1, 2},	.sem = {INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_LABEL, 0} },
+		{ .name = "call",	.index = 86,	.argc = 3,	.isem = {1, 0, 2},	.sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "return",	.index = 87,	.argc = 1,	.isem = {0, 1, 1},	.sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
 
-		{ .name = "add", .index = 88, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
-		{ .name = "sub", .index = 89, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
-		{ .name = "mul", .index = 90, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
-		{ .name = "div", .index = 91, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
-		{ .name = "mod", .index = 92, .sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
-		{ .name = "neg", .index = 93, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
-		{ .name = "floor", .index = 94, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
-		{ .name = "ceil", .index = 95, .sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "add",	.index = 88, 	.argc = 3,	.isem = {1, 0, 2},	.sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "sub",	.index = 89,	.argc = 3,	.isem = {1, 0, 2},	.sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "mul",	.index = 90,	.argc = 3,	.isem = {1, 0, 2},	.sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "div",	.index = 91,	.argc = 3,	.isem = {1, 0, 2},	.sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "mod",	.index = 92,	.argc = 3,	.isem = {1, 0, 2},	.sem = {INSTRUCTION_ARGUMENT_TYPE, INSTRUCTION_ARGUMENT_NODE, INSTRUCTION_ARGUMENT_DATA, 0} },
+		{ .name = "neg",	.index = 93,	.argc = 1,	.isem = {0, 1, 1},	.sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "floor",	.index = 94,	.argc = 1,	.isem = {0, 1, 1},	.sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
+		{ .name = "ceil",	.index = 95,	.argc = 1,	.isem = {0, 1, 1},	.sem = {INSTRUCTION_ARGUMENT_NODE, 0} },
 	};
 
 	for (aline_t *cline = line2; cline->section == TEXT_SECTION; cline++) {
